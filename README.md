@@ -29,3 +29,6 @@ OPENAI_API_KEY=tu_clave_aqui
 En la página principal puedes crear una nueva partida. Los participantes se unen subiendo su foto. El organizador inicia la ronda y se generarán imágenes combinadas. Después de adivinar se muestran los puntajes.
 
 Este proyecto es solo un MVP y almacena todo en memoria.
+
+## Estilos
+La interfaz usa [Tailwind CSS](https://tailwindcss.com/) a través de su CDN, por lo que no se necesita configuración adicional.
