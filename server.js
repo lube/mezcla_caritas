@@ -2,6 +2,7 @@ const express = require('express');
 const fileUpload = require('express-fileupload');
 const path = require('path');
 const fs = require('fs');
+const session = require('express-session');
 require('dotenv').config();
 const { OpenAI } = require('openai');
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -17,12 +18,19 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/combinations', express.static(path.join(__dirname, 'combinations')));
 app.use(fileUpload());
 app.use(express.urlencoded({ extended: true }));
+app.use(
+  session({
+    secret: 'mezcla-secret',
+    resave: false,
+    saveUninitialized: true
+  })
+);
 
 // In-memory game state
 let game = {
   round: 1,
   difficulty: 2,
-  participants: [], // {id, name, photoPath, points}
+  participants: [], // {id, name, photoPath, points, sessionId}
   combinations: [] // {imagePath, participantIds}
 };
 
@@ -68,9 +76,14 @@ app.post('/join', async (req, res) => {
     return res.status(400).send('Name and photo required');
   }
   const id = game.participants.length + 1;
-  const uploadPath = path.join(__dirname, 'uploads', `${id}_${req.files.photo.name}`);
+  const sessionId = req.sessionID;
+  const sessionDir = path.join(__dirname, 'uploads', sessionId);
+  fs.mkdirSync(sessionDir, { recursive: true });
+  const uploadPath = path.join(sessionDir, `${id}_${req.files.photo.name}`);
   await req.files.photo.mv(uploadPath);
-  game.participants.push({ id, name, photoPath: uploadPath, points: 0 });
+  game.participants.push({ id, name, photoPath: uploadPath, points: 0, sessionId });
+  req.session.playerIds = req.session.playerIds || [];
+  req.session.playerIds.push(id);
   res.redirect('/lobby');
 });
 
@@ -184,7 +197,16 @@ app.post('/guess', (req, res) => {
 
 // Scoreboard
 app.get('/scoreboard', (req, res) => {
-  res.render('scoreboard', { game });
+  const sessionScores = {};
+  game.participants.forEach(p => {
+    if (!sessionScores[p.sessionId]) {
+      sessionScores[p.sessionId] = { sessionId: p.sessionId, players: [], points: 0 };
+    }
+    sessionScores[p.sessionId].players.push({ name: p.name, points: p.points });
+    sessionScores[p.sessionId].points += p.points;
+  });
+  const sessions = Object.values(sessionScores);
+  res.render('scoreboard', { game, sessions });
 });
 
 // Next round

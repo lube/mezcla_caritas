@@ -15,20 +15,20 @@
   <main class="max-w-2xl mx-auto p-6 bg-white mt-6 rounded shadow">
     <h2 class="text-xl font-semibold mb-4">Tabla de posiciones - Ronda <%= game.round %></h2>
     <table class="w-full table-auto mb-4">
-      <thead class="bg-gray-200">
-        <tr>
-          <th class="px-2 py-1 text-left">Jugador</th>
-          <th class="px-2 py-1 text-left">Puntos</th>
+       <thead class="bg-gray-200"><tr><th class="px-2 py-1 text-left">Sesión</th><th class="px-2 py-1 text-left">Jugadores (puntos)</th><th class="px-2 py-1 text-left">Puntos totales</th></tr> </thead>
+      <% sessions.forEach(s => { %>
+        <tr class="border-t">
+          <td><%= s.sessionId %></td>
+          <td>
+            <ul>
+              <% s.players.forEach(pl => { %>
+                <li><%= pl.name %> (<%= pl.points %>)</li>
+              <% }) %>
+            </ul>
+          </td>
+          <td><%= s.points %></td>
         </tr>
-      </thead>
-      <tbody>
-        <% game.participants.forEach(p => { %>
-          <tr class="border-t">
-            <td class="px-2 py-1"><%= p.name %></td>
-            <td class="px-2 py-1"><%= p.points %></td>
-          </tr>
-        <% }) %>
-      </tbody>
+      <% }) %>
     </table>
     <form action="/next" method="post" class="mt-4">
       <button type="submit" class="px-4 py-2 bg-yellow-500 text-white font-semibold rounded hover:bg-yellow-600">Siguiente ronda</button>

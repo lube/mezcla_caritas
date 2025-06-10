@@ -28,6 +28,8 @@ OPENAI_API_KEY=tu_clave_aqui
 
 En la página principal puedes crear una nueva partida. Los participantes se unen subiendo su foto. El organizador inicia la ronda y se generarán imágenes combinadas. Después de adivinar se muestran los puntajes.
 
+Cada dispositivo usa una sesión y puede registrar varios jugadores. Los puntajes se agrupan por sesión en la tabla final.
+
 Este proyecto es solo un MVP y almacena todo en memoria.
 
 ## Estilos
