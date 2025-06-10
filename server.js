@@ -142,7 +142,7 @@ app.post('/start', async (req, res) => {
               prompt: { type: 'string' },
               size: {
                 type: 'string',
-                enum: ['1024x1024', '1536x1024', '1024x1536']
+                enum: ['1024x1024', '1024x1536', '1536x1024']
               }
             },
             required: ['prompt', 'size'],
