@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Tabla de posiciones</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <h1>Tabla de posiciones - Ronda <%= game.round %></h1>
+  <table border="1" cellpadding="5">
+    <tr><th>Jugador</th><th>Puntos</th></tr>
+    <% game.participants.forEach(p => { %>
+      <tr><td><%= p.name %></td><td><%= p.points %></td></tr>
+    <% }) %>
+  </table>
+  <form action="/next" method="post" style="margin-top:20px;">
+    <button type="submit">Siguiente ronda</button>
+  </form>
+  <a href="/lobby">Volver al lobby</a>
+</body>
+</html>
