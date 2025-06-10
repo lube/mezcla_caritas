@@ -2,8 +2,9 @@ const express = require('express');
 const fileUpload = require('express-fileupload');
 const path = require('path');
 const fs = require('fs');
+require('dotenv').config();
 const { OpenAI } = require('openai');
-const openai = new OpenAI();
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -91,13 +92,20 @@ app.post('/start', async (req, res) => {
       chosen.map(id => fs.promises.readFile(game.participants.find(p => p.id === id).photoPath, { encoding: 'base64' }))
     );
 
-    const userContent = [
-      { type: 'text', text: 'Take the style from this image:' },
-      { type: 'image_url', image_url: { url: `data:image/png;base64,${base64Images[0]}` } },
-      { type: 'text', text: 'Take the subject from this image:' },
-      { type: 'image_url', image_url: { url: `data:image/png;base64,${base64Images[1]}` } },
-      { type: 'text', text: 'Examine attached images. Synthesize a new dalle image, with combined description.' }
-    ];
+    const userContent = [];
+    if (base64Images.length > 0) {
+      userContent.push({ type: 'text', text: 'Take the style from this image:' });
+      userContent.push({ type: 'image_url', image_url: { url: `data:image/png;base64,${base64Images[0]}` } });
+    }
+    if (base64Images.length > 1) {
+      userContent.push({ type: 'text', text: 'Take the subject from this image:' });
+      userContent.push({ type: 'image_url', image_url: { url: `data:image/png;base64,${base64Images[1]}` } });
+    }
+    for (let j = 2; j < base64Images.length; j++) {
+      userContent.push({ type: 'text', text: 'Integrate features from this image:' });
+      userContent.push({ type: 'image_url', image_url: { url: `data:image/png;base64,${base64Images[j]}` } });
+    }
+    userContent.push({ type: 'text', text: 'Examine attached images. Synthesize a new dalle image, with combined description.' });
 
     const chat = await openai.chat.completions.create({
       model: 'gpt-4o',
