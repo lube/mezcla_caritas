@@ -5,15 +5,20 @@
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
-  <h1>Unirse a la partida</h1>
-  <form action="/join" method="post" enctype="multipart/form-data">
-    <div>
-      <label>Nombre: <input type="text" name="name" required></label>
-    </div>
-    <div>
-      <label>Foto: <input type="file" name="photo" accept="image/*" required></label>
-    </div>
-    <button type="submit">Enviar</button>
-  </form>
+  <header>
+    <h1>Mezcla Caritas</h1>
+  </header>
+  <div class="container">
+    <h2>Unirse a la partida</h2>
+    <form action="/join" method="post" enctype="multipart/form-data">
+      <div>
+        <label>Nombre: <input type="text" name="name" required></label>
+      </div>
+      <div>
+        <label>Foto: <input type="file" name="photo" accept="image/*" required></label>
+      </div>
+      <button type="submit">Enviar</button>
+    </form>
+  </div>
 </body>
 </html>
