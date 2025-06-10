@@ -2,7 +2,9 @@ const express = require('express');
 const fileUpload = require('express-fileupload');
 const path = require('path');
 const fs = require('fs');
-const { Jimp } = require('jimp');
+require('dotenv').config();
+const { OpenAI } = require('openai');
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -85,16 +87,70 @@ app.post('/start', async (req, res) => {
       const randomId = ids[Math.floor(Math.random() * ids.length)];
       if (!chosen.includes(randomId)) chosen.push(randomId);
     }
-    const images = await Promise.all(chosen.map(id => Jimp.read(game.participants.find(p => p.id === id).photoPath)));
-    let base = images[0];
-    for (let j = 1; j < images.length; j++) {
-      base = base.composite(images[j], 0, 0, {
-        mode: Jimp.BLEND_SOURCE_OVER,
-        opacitySource: 0.5
-      });
-    }
+
+    const base64Images = await Promise.all(
+      chosen.map(id => fs.promises.readFile(game.participants.find(p => p.id === id).photoPath, { encoding: 'base64' }))
+    );
+
+    const userContent = base64Images.map(img => ({
+      type: 'image_url',
+      image_url: { url: `data:image/png;base64,${img}` }
+    }));
+    userContent.push({
+      type: 'text',
+      text: 'Analyze these participant photos and create one new face that blends all of them together.'
+    });
+
+    const chat = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        {
+          role: 'system',
+          content: [
+            {
+              type: 'text',
+              text: 'You use your computer vision on user images to make new AI images.'
+            }
+          ]
+        },
+        { role: 'user', content: userContent }
+      ],
+      response_format: {
+        type: 'json_schema',
+        json_schema: {
+          name: 'dalle_output',
+          strict: true,
+          schema: {
+            type: 'object',
+            properties: {
+              prompt: { type: 'string' },
+              size: { type: 'string', enum: ['1024x1024', '1792x1024'] }
+            },
+            required: ['prompt', 'size'],
+            additionalProperties: false
+          }
+        }
+      },
+      temperature: 0.5,
+      max_tokens: 1500,
+      top_p: 0.9
+    });
+
+    const dalleParams = JSON.parse(chat.choices[0].message.content);
+
+    const image = await openai.images.generate({
+      model: 'dall-e-3',
+      prompt: dalleParams.prompt,
+      n: 1,
+      size: dalleParams.size
+    });
+
+    const responseUrl = image.data[0].url;
+    const resp = await fetch(responseUrl);
+    const buffer = await resp.arrayBuffer();
+
     const comboPath = path.join(__dirname, 'combinations', `combo_${i}.png`);
-    await base.writeAsync(comboPath);
+    await fs.promises.writeFile(comboPath, Buffer.from(buffer));
     game.combinations.push({ imagePath: comboPath, participantIds: chosen });
   }
   res.redirect('/play');
