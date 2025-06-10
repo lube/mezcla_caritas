@@ -28,5 +28,19 @@
       <button type="submit" class="px-4 py-2 bg-yellow-500 text-white font-semibold rounded hover:bg-yellow-600">Comenzar ronda</button>
     </form>
   </main>
+  <script>
+    async function poll() {
+      const res = await fetch('/status');
+      const data = await res.json();
+      if (data.state === 'generating') {
+        window.location.href = '/wait';
+      } else if (data.state === 'playing') {
+        window.location.href = '/play';
+      } else {
+        setTimeout(poll, 2000);
+      }
+    }
+    poll();
+  </script>
 </body>
 </html>

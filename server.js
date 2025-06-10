@@ -31,7 +31,8 @@ let game = {
   round: 1,
   difficulty: 2,
   participants: [], // {id, name, photoPath, points, sessionId}
-  combinations: [] // {imagePath, participantIds}
+  combinations: [], // {imagePath, participantIds}
+  state: 'lobby' // lobby | generating | playing | scoreboard
 };
 
 function resetGame() {
@@ -39,6 +40,7 @@ function resetGame() {
   game.difficulty = 2;
   game.participants = [];
   game.combinations = [];
+  game.state = 'lobby';
   // Clean uploads and combinations directories
   fs.rmSync(path.join(__dirname, 'uploads'), { recursive: true, force: true });
   fs.rmSync(path.join(__dirname, 'combinations'), { recursive: true, force: true });
@@ -56,17 +58,31 @@ app.get('/', (req, res) => {
 // Create new game (organizer)
 app.post('/create', (req, res) => {
   resetGame();
+  game.state = 'lobby';
   res.redirect('/lobby');
 });
 
 // Lobby page
 app.get('/lobby', (req, res) => {
+  if (game.state === 'generating') return res.redirect('/wait');
+  if (game.state === 'playing') return res.redirect('/play');
   res.render('lobby', { game });
 });
 
 // Join page
 app.get('/join', (req, res) => {
   res.render('join');
+});
+
+// Wait page for image generation
+app.get('/wait', (req, res) => {
+  if (game.state === 'playing') return res.redirect('/play');
+  res.render('wait');
+});
+
+// Endpoint to query current state
+app.get('/status', (req, res) => {
+  res.json({ state: game.state });
 });
 
 // Handle join
@@ -93,88 +109,102 @@ app.post('/start', async (req, res) => {
     return res.status(400).send('Not enough participants');
   }
   game.combinations = [];
+  fs.rmSync(path.join(__dirname, 'combinations'), { recursive: true, force: true });
+  fs.mkdirSync(path.join(__dirname, 'combinations'), { recursive: true });
+  game.state = 'generating';
+  res.redirect('/wait');
 
-  const ids = game.participants.map(p => p.id);
-  // Generate combinations equal to number of participants
-  for (let i = 0; i < game.participants.length; i++) {
-    // pick random unique participants for this combination
-    const chosen = [];
-    while (chosen.length < game.difficulty) {
-      const randomId = ids[Math.floor(Math.random() * ids.length)];
-      if (!chosen.includes(randomId)) chosen.push(randomId);
-    }
+  // async generation after redirect
+  (async () => {
+    try {
+      const ids = game.participants.map(p => p.id);
+      // shuffle participants for fair combinations
+      const shuffled = [...ids];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
 
-    const base64Images = await Promise.all(
-      chosen.map(id => fs.promises.readFile(game.participants.find(p => p.id === id).photoPath, { encoding: 'base64' }))
-    );
-
-    const userContent = base64Images.map(img => ({
-      type: 'image_url',
-      image_url: { url: `data:image/png;base64,${img}` }
-    }));
-    userContent.push({
-      type: 'text',
-      text: 'Analyze these participant photos and create one new face that blends all of them together.'
-    });
-
-    const chat = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        {
-          role: 'system',
-          content: [
-            {
-              type: 'text',
-              text: 'You use your computer vision on user images to make new AI images.'
-            }
-          ]
-        },
-        { role: 'user', content: userContent }
-      ],
-      response_format: {
-        type: 'json_schema',
-        json_schema: {
-          name: 'dalle_output',
-          strict: true,
-          schema: {
-            type: 'object',
-            properties: {
-              prompt: { type: 'string' },
-              size: {
-                type: 'string',
-                enum: ['1024x1024', '1024x1536', '1536x1024']
-              }
-            },
-            required: ['prompt', 'size'],
-            additionalProperties: false
-          }
+      // generate one combination per participant
+      for (let i = 0; i < game.participants.length; i++) {
+        const chosen = [];
+        for (let j = 0; j < game.difficulty; j++) {
+          chosen.push(shuffled[(i + j) % shuffled.length]);
         }
-      },
-      temperature: 0.5,
-      max_tokens: 1500,
-      top_p: 0.9
-    });
 
-    const dalleParams = JSON.parse(chat.choices[0].message.content);
+        const base64Images = await Promise.all(
+          chosen.map(id => fs.promises.readFile(game.participants.find(p => p.id === id).photoPath, { encoding: 'base64' }))
+        );
 
-    const image = await openai.images.generate({
-      model: 'gpt-image-1',
-      prompt: dalleParams.prompt,
-      size: dalleParams.size,
-      moderation: 'low'
-    });
+        const userContent = base64Images.map(img => ({
+          type: 'image_url',
+          image_url: { url: `data:image/png;base64,${img}` }
+        }));
+        userContent.push({
+          type: 'text',
+          text: 'Analyze these participant photos and create one new face that blends all of them together.'
+        });
 
-    const buffer = Buffer.from(image.data[0].b64_json, 'base64');
+        const chat = await openai.chat.completions.create({
+          model: 'gpt-4o',
+          messages: [
+            {
+              role: 'system',
+              content: [
+                { type: 'text', text: 'You use your computer vision on user images to make new AI images.' }
+              ]
+            },
+            { role: 'user', content: userContent }
+          ],
+          response_format: {
+            type: 'json_schema',
+            json_schema: {
+              name: 'dalle_output',
+              strict: true,
+              schema: {
+                type: 'object',
+                properties: {
+                  prompt: { type: 'string' },
+                  size: { type: 'string', enum: ['1024x1024', '1024x1536', '1536x1024'] }
+                },
+                required: ['prompt', 'size'],
+                additionalProperties: false
+              }
+            }
+          },
+          temperature: 0.5,
+          max_tokens: 1500,
+          top_p: 0.9
+        });
 
-    const comboPath = path.join(__dirname, 'combinations', `combo_${i}.png`);
-    await fs.promises.writeFile(comboPath, buffer);
-    game.combinations.push({ imagePath: comboPath, participantIds: chosen });
-  }
-  res.redirect('/play');
+        const dalleParams = JSON.parse(chat.choices[0].message.content);
+
+        const image = await openai.images.generate({
+          model: 'gpt-image-1',
+          prompt: dalleParams.prompt,
+          size: dalleParams.size,
+          moderation: 'low'
+        });
+
+        const buffer = Buffer.from(image.data[0].b64_json, 'base64');
+
+        const comboPath = path.join(__dirname, 'combinations', `combo_${i}.png`);
+        await fs.promises.writeFile(comboPath, buffer);
+        game.combinations.push({ imagePath: comboPath, participantIds: chosen });
+      }
+
+      game.state = 'playing';
+    } catch (err) {
+      console.error('Error generating images', err);
+      game.state = 'lobby';
+    }
+  })();
 });
 
 // Play page
 app.get('/play', (req, res) => {
+  if (game.state === 'generating') return res.redirect('/wait');
+  if (game.state !== 'playing') return res.redirect('/lobby');
   res.render('play', { game });
 });
 
@@ -193,11 +223,13 @@ app.post('/guess', (req, res) => {
       });
     }
   }
+  game.state = 'scoreboard';
   res.redirect('/scoreboard');
 });
 
 // Scoreboard
 app.get('/scoreboard', (req, res) => {
+  game.state = 'scoreboard';
   const sessionScores = {};
   game.participants.forEach(p => {
     if (!sessionScores[p.sessionId]) {
@@ -215,6 +247,7 @@ app.post('/next', (req, res) => {
   game.round += 1;
   game.difficulty += 1;
   game.combinations = [];
+  game.state = 'lobby';
   res.redirect('/lobby');
 });
 
