@@ -26,7 +26,7 @@ archivo `.env` con el siguiente contenido:
 OPENAI_API_KEY=tu_clave_aqui
 ```
 
-En la página principal puedes crear una nueva partida. Los participantes se unen subiendo su foto. El organizador inicia la ronda y se generarán imágenes combinadas. Después de adivinar se muestran los puntajes.
+En la página principal puedes crear una nueva partida. Los participantes se unen subiendo su foto. El organizador inicia la ronda y se generarán imágenes combinadas. Después de adivinar se muestran los puntajes. Para generar las combinaciones se utiliza el modelo `gpt-image-1` de OpenAI.
 
 Cada dispositivo usa una sesión y puede registrar varios jugadores. Los puntajes se agrupan por sesión en la tabla final.
 
