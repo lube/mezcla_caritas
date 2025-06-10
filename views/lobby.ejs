@@ -5,16 +5,21 @@
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
-  <h1>Lobby - Ronda <%= game.round %> (Dificultad: <%= game.difficulty %>)</h1>
-  <p>Participantes inscritos: <%= game.participants.length %></p>
-  <ul>
-    <% game.participants.forEach(p => { %>
-      <li><%= p.name %></li>
-    <% }) %>
-  </ul>
-  <a href="/join">Unirse</a>
-  <form action="/start" method="post" style="margin-top:20px;">
-    <button type="submit">Comenzar ronda</button>
-  </form>
+  <header>
+    <h1>Mezcla Caritas</h1>
+  </header>
+  <div class="container">
+    <h2>Lobby - Ronda <%= game.round %> (Dificultad: <%= game.difficulty %>)</h2>
+    <p>Participantes inscritos: <%= game.participants.length %></p>
+    <ul>
+      <% game.participants.forEach(p => { %>
+        <li><%= p.name %></li>
+      <% }) %>
+    </ul>
+    <a href="/join">Unirse</a>
+    <form action="/start" method="post" style="margin-top:20px;">
+      <button type="submit">Comenzar ronda</button>
+    </form>
+  </div>
 </body>
 </html>

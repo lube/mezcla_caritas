@@ -5,22 +5,27 @@
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
-  <h1>Selecciona las caras que aparecen</h1>
-  <form action="/guess" method="post">
-    <% game.combinations.forEach((c, idx) => { %>
-      <div>
-        <img src="/<%= c.imagePath.split('/').slice(-2).join('/') %>" alt="combo">
-        <div>
-          <% game.participants.forEach(p => { %>
-            <label>
-              <input type="checkbox" name="combo_<%= idx %>" value="<%= p.id %>"> <%= p.name %>
-            </label>
-          <% }) %>
+  <header>
+    <h1>Mezcla Caritas</h1>
+  </header>
+  <div class="container">
+    <h2>Selecciona las caras que aparecen</h2>
+    <form action="/guess" method="post">
+      <% game.combinations.forEach((c, idx) => { %>
+        <div class="combo">
+          <img src="/<%= c.imagePath.split('/').slice(-2).join('/') %>" alt="combo">
+          <div class="options">
+            <% game.participants.forEach(p => { %>
+              <label>
+                <input type="checkbox" name="combo_<%= idx %>" value="<%= p.id %>"> <%= p.name %>
+              </label>
+            <% }) %>
+          </div>
         </div>
-      </div>
-      <hr>
-    <% }) %>
-    <button type="submit">Enviar respuestas</button>
-  </form>
+        <hr>
+      <% }) %>
+      <button type="submit">Enviar respuestas</button>
+    </form>
+  </div>
 </body>
 </html>

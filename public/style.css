@@ -1,2 +1,49 @@
-body { font-family: Arial, sans-serif; margin: 20px; }
-img { max-width: 200px; }
+body {
+  font-family: 'Roboto', Arial, sans-serif;
+  background-color: #f5f5f5;
+  margin: 0;
+}
+
+header {
+  background-color: #FFE600;
+  padding: 10px 20px;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.container {
+  max-width: 800px;
+  margin: 20px auto;
+  background: #fff;
+  padding: 20px;
+  border-radius: 4px;
+}
+
+button {
+  background-color: #FFE600;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+button:hover {
+  background-color: #FFD400;
+}
+
+img {
+  max-width: 200px;
+}
+
+.combo {
+  margin-bottom: 20px;
+}
+
+.options label {
+  display: inline-block;
+  margin-right: 10px;
+}
