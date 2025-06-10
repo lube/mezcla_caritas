@@ -140,7 +140,10 @@ app.post('/start', async (req, res) => {
             type: 'object',
             properties: {
               prompt: { type: 'string' },
-              size: { type: 'string', enum: ['1024x1024', '1792x1024'] }
+              size: {
+                type: 'string',
+                enum: ['1024x1024', '1536x1024', '1024x1536']
+              }
             },
             required: ['prompt', 'size'],
             additionalProperties: false
@@ -155,18 +158,16 @@ app.post('/start', async (req, res) => {
     const dalleParams = JSON.parse(chat.choices[0].message.content);
 
     const image = await openai.images.generate({
-      model: 'dall-e-3',
+      model: 'gpt-image-1',
       prompt: dalleParams.prompt,
-      n: 1,
-      size: dalleParams.size
+      size: dalleParams.size,
+      moderation: 'low'
     });
 
-    const responseUrl = image.data[0].url;
-    const resp = await fetch(responseUrl);
-    const buffer = await resp.arrayBuffer();
+    const buffer = Buffer.from(image.data[0].b64_json, 'base64');
 
     const comboPath = path.join(__dirname, 'combinations', `combo_${i}.png`);
-    await fs.promises.writeFile(comboPath, Buffer.from(buffer));
+    await fs.promises.writeFile(comboPath, buffer);
     game.combinations.push({ imagePath: comboPath, participantIds: chosen });
   }
   res.redirect('/play');
