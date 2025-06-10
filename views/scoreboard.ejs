@@ -11,9 +11,19 @@
   <div class="container">
     <h2>Tabla de posiciones - Ronda <%= game.round %></h2>
     <table border="1" cellpadding="5">
-      <tr><th>Jugador</th><th>Puntos</th></tr>
-      <% game.participants.forEach(p => { %>
-        <tr><td><%= p.name %></td><td><%= p.points %></td></tr>
+      <tr><th>Sesión</th><th>Jugadores (puntos)</th><th>Puntos totales</th></tr>
+      <% sessions.forEach(s => { %>
+        <tr>
+          <td><%= s.sessionId %></td>
+          <td>
+            <ul>
+              <% s.players.forEach(pl => { %>
+                <li><%= pl.name %> (<%= pl.points %>)</li>
+              <% }) %>
+            </ul>
+          </td>
+          <td><%= s.points %></td>
+        </tr>
       <% }) %>
     </table>
     <form action="/next" method="post" style="margin-top:20px;">
