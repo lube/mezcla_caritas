@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Jugar</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <h1>Selecciona las caras que aparecen</h1>
+  <form action="/guess" method="post">
+    <% game.combinations.forEach((c, idx) => { %>
+      <div>
+        <img src="/<%= c.imagePath.split('/').slice(-2).join('/') %>" alt="combo">
+        <div>
+          <% game.participants.forEach(p => { %>
+            <label>
+              <input type="checkbox" name="combo_<%= idx %>" value="<%= p.id %>"> <%= p.name %>
+            </label>
+          <% }) %>
+        </div>
+      </div>
+      <hr>
+    <% }) %>
+    <button type="submit">Enviar respuestas</button>
+  </form>
+</body>
+</html>

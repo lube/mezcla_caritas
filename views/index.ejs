@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Mezcla Caritas</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <h1>Mezcla Caritas</h1>
+  <form action="/create" method="post">
+    <button type="submit">Crear nueva partida</button>
+  </form>
+  <% if (game.participants.length > 0) { %>
+    <a href="/lobby">Ir al lobby existente</a>
+  <% } %>
+</body>
+</html>
