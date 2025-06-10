@@ -2,7 +2,7 @@ const express = require('express');
 const fileUpload = require('express-fileupload');
 const path = require('path');
 const fs = require('fs');
-const Jimp = require('jimp');
+const { Jimp } = require('jimp');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
