@@ -9,7 +9,7 @@
 <body class="bg-gray-100 text-gray-800">
   <header class="bg-yellow-400">
     <div class="max-w-2xl mx-auto p-4">
-      <h1 class="text-2xl font-bold">Mezcla Caritas</h1>
+      <h1 class="text-2xl font-bold text-gray-800">Mezcla Caritas</h1>
     </div>
   </header>
   <main class="max-w-2xl mx-auto p-6 bg-white mt-6 rounded shadow">
@@ -21,10 +21,25 @@
       </div>
       <div>
         <label class="block mb-1">Foto:</label>
-        <input type="file" name="photo" accept="image/*" required class="w-full" />
+        <input id="photoInput" type="file" name="photo" accept="image/*" required class="w-full" />
       </div>
+      <img id="preview" class="w-32 h-32 object-cover rounded-full hidden" />
       <button type="submit" class="px-4 py-2 bg-yellow-500 text-white font-semibold rounded hover:bg-yellow-600">Enviar</button>
     </form>
+    <script>
+      const input = document.getElementById('photoInput');
+      const preview = document.getElementById('preview');
+      input.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          preview.src = ev.target.result;
+          preview.classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+      });
+    </script>
   </main>
 </body>
 </html>
