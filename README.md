@@ -31,3 +31,6 @@ En la página principal puedes crear una nueva partida. Los participantes se une
 Cada dispositivo usa una sesión y puede registrar varios jugadores. Los puntajes se agrupan por sesión en la tabla final.
 
 Este proyecto es solo un MVP y almacena todo en memoria.
+
+## Estilos
+La interfaz usa [Tailwind CSS](https://tailwindcss.com/) a través de su CDN, por lo que no se necesita configuración adicional.

@@ -13,6 +13,9 @@ const PORT = process.env.PORT || 3000;
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
+// Serve uploaded images and generated combinations
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/combinations', express.static(path.join(__dirname, 'combinations')));
 app.use(fileUpload());
 app.use(express.urlencoded({ extended: true }));
 app.use(

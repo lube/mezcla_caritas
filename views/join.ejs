@@ -1,24 +1,30 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
+  <meta charset="UTF-8">
   <title>Unirse</title>
+  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="/style.css" />
 </head>
-<body>
-  <header>
-    <h1>Mezcla Caritas</h1>
+<body class="bg-gray-100 text-gray-800">
+  <header class="bg-yellow-400">
+    <div class="max-w-2xl mx-auto p-4">
+      <h1 class="text-2xl font-bold">Mezcla Caritas</h1>
+    </div>
   </header>
-  <div class="container">
-    <h2>Unirse a la partida</h2>
-    <form action="/join" method="post" enctype="multipart/form-data">
+  <main class="max-w-2xl mx-auto p-6 bg-white mt-6 rounded shadow">
+    <h2 class="text-xl font-semibold mb-4">Unirse a la partida</h2>
+    <form action="/join" method="post" enctype="multipart/form-data" class="space-y-4">
       <div>
-        <label>Nombre: <input type="text" name="name" required></label>
+        <label class="block mb-1">Nombre:</label>
+        <input type="text" name="name" required class="w-full border rounded p-2" />
       </div>
       <div>
-        <label>Foto: <input type="file" name="photo" accept="image/*" required></label>
+        <label class="block mb-1">Foto:</label>
+        <input type="file" name="photo" accept="image/*" required class="w-full" />
       </div>
-      <button type="submit">Enviar</button>
+      <button type="submit" class="px-4 py-2 bg-yellow-500 text-white font-semibold rounded hover:bg-yellow-600">Enviar</button>
     </form>
-  </div>
+  </main>
 </body>
 </html>
