@@ -160,17 +160,14 @@ app.post('/start', async (req, res) => {
     const image = await openai.images.generate({
       model: 'gpt-image-1',
       prompt: dalleParams.prompt,
-      n: 1,
       size: dalleParams.size,
-      response_format: 'b64_json',
-      output_format: 'png'
+      moderation: 'low'
     });
 
+    const buffer = Buffer.from(image.data[0].b64_json, 'base64');
+
     const comboPath = path.join(__dirname, 'combinations', `combo_${i}.png`);
-    await fs.promises.writeFile(
-      comboPath,
-      Buffer.from(image.data[0].b64_json, 'base64')
-    );
+    await fs.promises.writeFile(comboPath, buffer);
     game.combinations.push({ imagePath: comboPath, participantIds: chosen });
   }
   res.redirect('/play');
