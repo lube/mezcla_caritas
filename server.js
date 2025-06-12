@@ -33,6 +33,7 @@ let game = {
   prompt: 'Analyze these participant photos and create one new face that blends all of them together.',
   participants: [], // {id, name, photoPath, points, sessionId}
   combinations: [], // {imagePath, participantIds}
+  roundResults: {}, // {playerId: [{guessedIds, correctIds, correct}]}
   state: 'lobby' // lobby | generating | playing | scoreboard
 };
 
@@ -42,6 +43,7 @@ function resetGame() {
   game.prompt = 'Analyze these participant photos and create one new face that blends all of them together.';
   game.participants = [];
   game.combinations = [];
+  game.roundResults = {};
   game.state = 'lobby';
   // Clean uploads and combinations directories
   fs.rmSync(path.join(__dirname, 'uploads'), { recursive: true, force: true });
@@ -114,6 +116,7 @@ app.post('/start', async (req, res) => {
     ? req.body.prompt.trim()
     : game.prompt;
   game.combinations = [];
+  game.roundResults = {};
   fs.rmSync(path.join(__dirname, 'combinations'), { recursive: true, force: true });
   fs.mkdirSync(path.join(__dirname, 'combinations'), { recursive: true });
   game.state = 'generating';
@@ -225,20 +228,34 @@ app.get('/play', (req, res) => {
 
 // Handle guesses
 app.post('/guess', (req, res) => {
-  const guesses = req.body; // {combo_0: [id,id], combo_1: [...]}        
+  const guesses = req.body; // {combo_0: [id,id], combo_1: [...]} by the current session
+  const sessionPlayerIds = req.session.playerIds || [];
+
+  sessionPlayerIds.forEach(pid => {
+    game.roundResults[pid] = [];
+  });
+
   for (const [key, value] of Object.entries(guesses)) {
     const index = parseInt(key.split('_')[1]);
     const guessedIds = Array.isArray(value)
       ? value.map(v => parseInt(v))
       : [parseInt(value)];
     const combo = game.combinations[index];
-    combo.participantIds.forEach(id => {
-      if (guessedIds.includes(id)) {
-        const player = game.participants.find(p => p.id === id);
-        if (player) player.points += 1;
-      }
+    const correctIds = combo.participantIds;
+
+    sessionPlayerIds.forEach(pid => {
+      const player = game.participants.find(p => p.id === pid);
+      if (!player) return;
+      const hits = guessedIds.filter(id => correctIds.includes(id)).length;
+      player.points += hits;
+      game.roundResults[pid][index] = {
+        guessedIds,
+        correctIds,
+        correct: hits === correctIds.length && guessedIds.length === correctIds.length
+      };
     });
   }
+
   game.state = 'scoreboard';
   res.redirect('/scoreboard');
 });
@@ -247,9 +264,9 @@ app.post('/guess', (req, res) => {
 app.get('/scoreboard', (req, res) => {
   game.state = 'scoreboard';
   const players = game.participants
-    .map(p => ({ name: p.name, sessionId: p.sessionId, points: p.points }))
+    .map(p => ({ id: p.id, name: p.name, sessionId: p.sessionId, points: p.points }))
     .sort((a, b) => b.points - a.points);
-  res.render('scoreboard', { game, players });
+  res.render('scoreboard', { game, players, roundResults: game.roundResults });
 });
 
 // Next round
@@ -257,6 +274,7 @@ app.post('/next', (req, res) => {
   game.round += 1;
   game.difficulty += 1;
   game.combinations = [];
+  game.roundResults = {};
   game.state = 'lobby';
   res.redirect('/lobby');
 });
