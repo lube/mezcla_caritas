@@ -34,7 +34,8 @@ let game = {
   participants: [], // {id, name, photoPath, points, sessionId}
   combinations: [], // {imagePath, participantIds}
   roundResults: {}, // {playerId: [{guessedIds, correctIds, correct}]}
-  state: 'lobby' // lobby | generating | playing | scoreboard
+  state: 'lobby', // lobby | generating | playing | scoreboard
+  totalToGenerate: 0
 };
 
 function resetGame() {
@@ -45,6 +46,7 @@ function resetGame() {
   game.combinations = [];
   game.roundResults = {};
   game.state = 'lobby';
+  game.totalToGenerate = 0;
   // Clean uploads and combinations directories
   fs.rmSync(path.join(__dirname, 'uploads'), { recursive: true, force: true });
   fs.rmSync(path.join(__dirname, 'combinations'), { recursive: true, force: true });
@@ -92,7 +94,11 @@ app.get('/wait', (req, res) => {
 
 // Endpoint to query current state
 app.get('/status', (req, res) => {
-  res.json({ state: game.state });
+  res.json({
+    state: game.state,
+    generated: game.combinations.length,
+    total: game.totalToGenerate
+  });
 });
 
 // Handle join
@@ -125,6 +131,7 @@ app.post('/start', async (req, res) => {
   game.roundResults = {};
   fs.rmSync(path.join(__dirname, 'combinations'), { recursive: true, force: true });
   fs.mkdirSync(path.join(__dirname, 'combinations'), { recursive: true });
+  game.totalToGenerate = game.participants.length;
   game.state = 'generating';
   res.redirect('/wait');
 
@@ -139,9 +146,8 @@ app.post('/start', async (req, res) => {
         [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
       }
 
-      // create one combination per player
-      const combos = await Promise.all(
-        game.participants.map(async (player, idx) => {
+      // create one combination per player sequentially
+      for (const [idx, player] of game.participants.entries()) {
           // pick difficulty number of unique participant ids at random
           const chosen = [];
           while (chosen.length < game.difficulty) {
@@ -210,11 +216,8 @@ app.post('/start', async (req, res) => {
           const buffer = Buffer.from(image.data[0].b64_json, 'base64');
           const comboPath = path.join(__dirname, 'combinations', `combo_${idx}.png`);
           await fs.promises.writeFile(comboPath, buffer);
-          return { imagePath: comboPath, participantIds: chosen, playerId: player.id };
-        })
-      );
-
-      game.combinations = combos;
+          game.combinations.push({ imagePath: comboPath, participantIds: chosen, playerId: player.id });
+        }
       
       game.state = 'playing';
     } catch (err) {

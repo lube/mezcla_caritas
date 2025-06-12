@@ -14,18 +14,38 @@
   </header>
   <main class="max-w-2xl mx-auto p-6 bg-white mt-6 rounded shadow text-center space-y-4">
     <h2 class="text-xl font-semibold">Generando imágenes, por favor espera...</h2>
+    <div class="flex justify-center">
+      <svg class="animate-spin h-8 w-8 text-yellow-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+      </svg>
+    </div>
     <p>Cuando estén listas serás redirigido automáticamente.</p>
+    <p id="progress" class="text-sm text-gray-600"></p>
+    <p id="elapsed" class="text-sm text-gray-600"></p>
   </main>
   <script>
+    let seconds = 0;
+    function updateTimer() {
+      seconds += 1;
+      document.getElementById('elapsed').textContent = `Tiempo transcurrido: ${seconds}s`;
+    }
     async function checkStatus() {
       const res = await fetch('/status');
       const data = await res.json();
+      if (data.total > 0) {
+        const pct = Math.round((data.generated / data.total) * 100);
+        document.getElementById('progress').textContent = `Progreso: ${data.generated}/${data.total} (${pct}%)`;
+      }
       if (data.state === 'playing') {
         window.location.href = '/play';
+      } else if (data.state === 'lobby') {
+        window.location.href = '/lobby';
       } else {
         setTimeout(checkStatus, 2000);
       }
     }
+    setInterval(updateTimer, 1000);
     checkStatus();
   </script>
 </body>
