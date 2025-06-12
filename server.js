@@ -156,7 +156,8 @@ app.post('/start', async (req, res) => {
   game.roundResults = {};
   fs.rmSync(path.join(__dirname, 'combinations'), { recursive: true, force: true });
   fs.mkdirSync(path.join(__dirname, 'combinations'), { recursive: true });
-  game.totalToGenerate = game.participants.length;
+  const generateCount = Math.min(game.participants.length, 5);
+  game.totalToGenerate = generateCount;
   game.state = 'generating';
   res.redirect('/wait');
 
@@ -225,8 +226,8 @@ app.post('/start', async (req, res) => {
         [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
       }
 
-      // create one combination per player sequentially
-      for (const [idx, player] of game.participants.entries()) {
+      // create up to five combinations sequentially
+      for (let idx = 0; idx < generateCount; idx++) {
           // pick difficulty number of unique participant ids at random
           const chosen = [];
           while (chosen.length < game.difficulty) {
@@ -295,7 +296,7 @@ app.post('/start', async (req, res) => {
           const buffer = Buffer.from(image.data[0].b64_json, 'base64');
           const comboPath = path.join(__dirname, 'combinations', `combo_${idx}.png`);
           await fs.promises.writeFile(comboPath, buffer);
-          game.combinations.push({ imagePath: comboPath, participantIds: chosen, playerId: player.id });
+          game.combinations.push({ imagePath: comboPath, participantIds: chosen });
         }
       
       game.state = 'playing';
@@ -311,10 +312,8 @@ app.get('/play', (req, res) => {
   if (game.state === 'generating') return res.redirect('/wait');
   if (game.state !== 'playing') return res.redirect('/lobby');
   if (!isJoined(req)) return res.redirect('/lobby');
-  const playerIds = req.session.playerIds || [];
   const combos = game.combinations
-    .map((c, idx) => ({ ...c, index: idx }))
-    .filter(c => playerIds.includes(c.playerId));
+    .map((c, idx) => ({ ...c, index: idx }));
   res.render('play', { game, combos });
 });
 
