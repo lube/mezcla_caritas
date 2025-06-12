@@ -34,8 +34,10 @@
         const pct = Math.round((data.generated / data.total) * 100);
         document.getElementById('progress').textContent = `Progreso: ${data.generated}/${data.total} (${pct}%)`;
       }
-      if (data.state === 'playing') {
+      if (data.state === 'playing' && data.joined) {
         window.location.href = '/play';
+      } else if (data.state === 'playing') {
+        window.location.href = '/lobby';
       } else if (data.state === 'lobby') {
         window.location.href = '/lobby';
       } else {
