@@ -9,7 +9,7 @@
 </head>
 <body class="bg-gray-100 text-gray-800 min-h-screen flex flex-col">
   <%- include('partials/header') %>
-    <main class="max-w-2xl mx-auto p-6 bg-white mt-6 rounded shadow flex-grow">
+    <main class="max-w-2xl ml-6 p-6 bg-white mt-6 rounded shadow flex-grow">
       <h2 class="text-xl font-semibold mb-4">Selecciona las caras que aparecen</h2>
       <form action="/guess" method="post" class="space-y-6" id="guess-form">
       <% combos.forEach(c => { %>
