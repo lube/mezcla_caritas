@@ -125,74 +125,84 @@ app.post('/start', async (req, res) => {
         [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
       }
 
-      // generate one combination per participant
-      for (let i = 0; i < game.participants.length; i++) {
-        const chosen = [];
-        for (let j = 0; j < game.difficulty; j++) {
-          chosen.push(shuffled[(i + j) % shuffled.length]);
-        }
+      // create groups so each participant appears exactly once
+      // extra players are distributed to earlier groups
+      const groupCount = Math.floor(shuffled.length / game.difficulty) || 1;
+      const groups = Array.from({ length: groupCount }, () => []);
+      shuffled.forEach((id, idx) => {
+        groups[idx % groupCount].push(id);
+      });
 
-        const base64Images = await Promise.all(
-          chosen.map(id => fs.promises.readFile(game.participants.find(p => p.id === id).photoPath, { encoding: 'base64' }))
-        );
+      const combos = await Promise.all(
+        groups.map(async (chosen, idx) => {
+          const base64Images = await Promise.all(
+            chosen.map(id =>
+              fs.promises.readFile(
+                game.participants.find(p => p.id === id).photoPath,
+                { encoding: 'base64' }
+              )
+            )
+          );
 
-        const userContent = base64Images.map(img => ({
-          type: 'image_url',
-          image_url: { url: `data:image/png;base64,${img}` }
-        }));
-        userContent.push({
-          type: 'text',
-          text: 'Analyze these participant photos and create one new face that blends all of them together.'
-        });
+          const userContent = base64Images.map(img => ({
+            type: 'image_url',
+            image_url: { url: `data:image/png;base64,${img}` }
+          }));
+          userContent.push({
+            type: 'text',
+            text: 'Analyze these participant photos and create one new face that blends all of them together.'
+          });
 
-        const chat = await openai.chat.completions.create({
-          model: 'gpt-4o',
-          messages: [
-            {
-              role: 'system',
-              content: [
-                { type: 'text', text: 'You use your computer vision on user images to make new AI images.' }
-              ]
-            },
-            { role: 'user', content: userContent }
-          ],
-          response_format: {
-            type: 'json_schema',
-            json_schema: {
-              name: 'dalle_output',
-              strict: true,
-              schema: {
-                type: 'object',
-                properties: {
-                  prompt: { type: 'string' },
-                  size: { type: 'string', enum: ['1024x1024', '1024x1536', '1536x1024'] }
-                },
-                required: ['prompt', 'size'],
-                additionalProperties: false
+          const chat = await openai.chat.completions.create({
+            model: 'gpt-4o',
+            messages: [
+              {
+                role: 'system',
+                content: [
+                  { type: 'text', text: 'You use your computer vision on user images to make new AI images.' }
+                ]
+              },
+              { role: 'user', content: userContent }
+            ],
+            response_format: {
+              type: 'json_schema',
+              json_schema: {
+                name: 'dalle_output',
+                strict: true,
+                schema: {
+                  type: 'object',
+                  properties: {
+                    prompt: { type: 'string' },
+                    size: { type: 'string', enum: ['1024x1024', '1024x1536', '1536x1024'] }
+                  },
+                  required: ['prompt', 'size'],
+                  additionalProperties: false
+                }
               }
-            }
-          },
-          temperature: 0.5,
-          max_tokens: 1500,
-          top_p: 0.9
-        });
+            },
+            temperature: 0.5,
+            max_tokens: 1500,
+            top_p: 0.9
+          });
 
-        const dalleParams = JSON.parse(chat.choices[0].message.content);
+          const dalleParams = JSON.parse(chat.choices[0].message.content);
 
-        const image = await openai.images.generate({
-          model: 'gpt-image-1',
-          prompt: dalleParams.prompt,
-          size: dalleParams.size,
-          moderation: 'low'
-        });
+          const image = await openai.images.generate({
+            model: 'gpt-image-1',
+            prompt: dalleParams.prompt,
+            size: dalleParams.size,
+            moderation: 'low'
+          });
 
-        const buffer = Buffer.from(image.data[0].b64_json, 'base64');
+          const buffer = Buffer.from(image.data[0].b64_json, 'base64');
+          const comboPath = path.join(__dirname, 'combinations', `combo_${idx}.png`);
+          await fs.promises.writeFile(comboPath, buffer);
+          return { imagePath: comboPath, participantIds: chosen };
+        })
+      );
 
-        const comboPath = path.join(__dirname, 'combinations', `combo_${i}.png`);
-        await fs.promises.writeFile(comboPath, buffer);
-        game.combinations.push({ imagePath: comboPath, participantIds: chosen });
-      }
-
+      game.combinations = combos;
+      
       game.state = 'playing';
     } catch (err) {
       console.error('Error generating images', err);
