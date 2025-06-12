@@ -309,6 +309,9 @@ app.get('/scoreboard', (req, res) => {
 
 // Next round
 app.post('/next', (req, res) => {
+  if (game.state !== 'scoreboard') {
+    return res.redirect('/lobby');
+  }
   game.round += 1;
   game.difficulty += 1;
   game.combinations = [];
