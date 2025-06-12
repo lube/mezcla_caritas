@@ -4,6 +4,11 @@ body {
   background-color: #f3f4f6;
 }
 
-header.bg-yellow-400 {
-  background: linear-gradient(90deg,#f9d342,#f6ad55);
+header.bg-brand {
+  background: linear-gradient(90deg,#4f46e5,#0ea5e9);
 }
+
+button {
+  transition: background-color 0.2s;
+}
+
