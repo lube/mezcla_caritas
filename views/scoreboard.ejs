@@ -49,6 +49,24 @@
   <a href="/lobby" class="text-blue-600 underline mt-4 inline-block">Volver al lobby</a>
   </main>
   <%- include('partials/footer') %>
+  <script>
+    async function poll() {
+      const res = await fetch('/status');
+      const data = await res.json();
+      if (data.state === 'generating') {
+        window.location.href = '/wait';
+      } else if (data.state === 'playing' && data.joined) {
+        window.location.href = '/play';
+      } else if (data.state === 'lobby') {
+        window.location.href = '/lobby';
+      } else if (data.state !== 'scoreboard') {
+        window.location.href = '/lobby';
+      } else {
+        setTimeout(poll, 2000);
+      }
+    }
+    poll();
+  </script>
 </body>
 </html>
 
