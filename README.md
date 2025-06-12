@@ -43,4 +43,5 @@ Cada dispositivo usa una sesión y puede registrar varios jugadores. El tablero 
 Este proyecto es solo un MVP y almacena todo en memoria.
 
 ## Estilos
-La interfaz usa [Tailwind CSS](https://tailwindcss.com/) a través de su CDN, por lo que no se necesita configuración adicional.
+La interfaz usa [Tailwind CSS](https://tailwindcss.com/) mediante su CDN. Se definió una paleta en tonos azules dentro de `public/style.css` y se comparte en todas las vistas con parciales EJS.
+
