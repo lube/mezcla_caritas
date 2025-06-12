@@ -12,9 +12,9 @@
       <h1 class="text-2xl font-bold text-gray-800">Mezcla Caritas</h1>
     </div>
   </header>
-  <main class="max-w-2xl mx-auto p-6 bg-white mt-6 rounded shadow">
-    <h2 class="text-xl font-semibold mb-4">Selecciona las caras que aparecen</h2>
-    <form action="/guess" method="post" class="space-y-6">
+    <main class="max-w-2xl mx-auto p-6 bg-white mt-6 rounded shadow">
+      <h2 class="text-xl font-semibold mb-4">Selecciona las caras que aparecen</h2>
+      <form action="/guess" method="post" class="space-y-6" id="guess-form">
       <% combos.forEach(c => { %>
         <div class="combo space-y-2">
           <img src="/<%= c.imagePath.split('/').slice(-2).join('/') %>" alt="combo" class="w-48 rounded">
@@ -32,5 +32,24 @@
       <button type="submit" class="px-4 py-2 bg-yellow-500 text-white font-semibold rounded hover:bg-yellow-600">Enviar respuestas</button>
     </form>
   </main>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const limit = <%= game.difficulty %>;
+      document.querySelectorAll('.combo').forEach(comboEl => {
+        const boxes = comboEl.querySelectorAll('input[type="checkbox"]');
+        const update = () => {
+          const checked = comboEl.querySelectorAll('input[type="checkbox"]:checked').length;
+          boxes.forEach(box => {
+            if (!box.checked) {
+              box.disabled = checked >= limit;
+            } else {
+              box.disabled = false;
+            }
+          });
+        };
+        boxes.forEach(b => b.addEventListener('change', update));
+      });
+    });
+  </script>
 </body>
 </html>
