@@ -165,9 +165,15 @@ app.post('/start', async (req, res) => {
       const bgPlayer = game.participants[Math.floor(Math.random() * game.participants.length)];
       try {
         const img = await fs.promises.readFile(bgPlayer.photoPath, { encoding: 'base64' });
+        const specials = ['licha', 'lisandro', 'lisan'];
+        const isSpecial = specials.includes(bgPlayer.name.trim().toLowerCase());
+        const theme = Math.random() < 0.5 ? 'Breaking Bad' : 'Red Dead Redemption';
+        const bgText = isSpecial
+          ? `Create a full body image of this person in the style of ${theme}.`
+          : 'Create a funny full body image of this person in a weird situation and place.';
         const bgContent = [
           { type: 'image_url', image_url: { url: `data:image/png;base64,${img}` } },
-          { type: 'text', text: 'Create a funny full body image of this person in a weird situation and place.' }
+          { type: 'text', text: bgText }
         ];
         const bgChat = await openai.chat.completions.create({
           model: 'gpt-4o',
