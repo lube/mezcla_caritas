@@ -35,7 +35,8 @@ let game = {
   combinations: [], // {imagePath, participantIds}
   roundResults: {}, // {playerId: [{guessedIds, correctIds, correct}]}
   state: 'lobby', // lobby | generating | playing | scoreboard
-  totalToGenerate: 0
+  totalToGenerate: 0,
+  background: null
 };
 
 function isJoined(req) {
@@ -52,11 +53,14 @@ function resetGame() {
   game.roundResults = {};
   game.state = 'lobby';
   game.totalToGenerate = 0;
+  game.background = null;
   // Clean uploads and combinations directories
   fs.rmSync(path.join(__dirname, 'uploads'), { recursive: true, force: true });
   fs.rmSync(path.join(__dirname, 'combinations'), { recursive: true, force: true });
+  fs.rmSync(path.join(__dirname, 'backgrounds'), { recursive: true, force: true });
   fs.mkdirSync(path.join(__dirname, 'uploads'), { recursive: true });
   fs.mkdirSync(path.join(__dirname, 'combinations'), { recursive: true });
+  fs.mkdirSync(path.join(__dirname, 'backgrounds'), { recursive: true });
 }
 
 resetGame();
@@ -92,13 +96,13 @@ app.get('/lobby', (req, res) => {
 
 // Join page
 app.get('/join', (req, res) => {
-  res.render('join');
+  res.render('join', { game });
 });
 
 // Wait page for image generation
 app.get('/wait', (req, res) => {
   if (game.state === 'playing') return res.redirect('/play');
-  res.render('wait');
+  res.render('wait', { game });
 });
 
 // Endpoint to query current state
@@ -158,6 +162,54 @@ app.post('/start', async (req, res) => {
   // async generation after redirect
   (async () => {
     try {
+      const bgPlayer = game.participants[Math.floor(Math.random() * game.participants.length)];
+      try {
+        const img = await fs.promises.readFile(bgPlayer.photoPath, { encoding: 'base64' });
+        const bgContent = [
+          { type: 'image_url', image_url: { url: `data:image/png;base64,${img}` } },
+          { type: 'text', text: 'Create a funny full body image of this person in a weird situation and place.' }
+        ];
+        const bgChat = await openai.chat.completions.create({
+          model: 'gpt-4o',
+          messages: [
+            { role: 'system', content: [{ type: 'text', text: 'You use your computer vision on user images to make new AI images. Execute your mission.' }] },
+            { role: 'user', content: bgContent }
+          ],
+          response_format: {
+            type: 'json_schema',
+            json_schema: {
+              name: 'dalle_output',
+              strict: true,
+              schema: {
+                type: 'object',
+                properties: {
+                  prompt: { type: 'string' },
+                  size: { type: 'string', enum: ['1024x1024', '1024x1536', '1536x1024'] }
+                },
+                required: ['prompt', 'size'],
+                additionalProperties: false
+              }
+            }
+          },
+          temperature: 0.5,
+          max_tokens: 1500,
+          top_p: 0.9
+        });
+        const bgParams = JSON.parse(bgChat.choices[0].message.content);
+        const bgImage = await openai.images.generate({
+          model: 'gpt-image-1',
+          prompt: bgParams.prompt,
+          size: bgParams.size,
+          moderation: 'low'
+        });
+        const bgBuffer = Buffer.from(bgImage.data[0].b64_json, 'base64');
+        const bgPath = path.join(__dirname, 'backgrounds', `bg_round_${game.round}.png`);
+        await fs.promises.writeFile(bgPath, bgBuffer);
+        game.background = bgPath;
+      } catch (bgErr) {
+        console.error('Error generating background image', bgErr);
+        game.background = null;
+      }
       const ids = game.participants.map(p => p.id);
       // shuffle participants for fair combinations
       const shuffled = [...ids];
@@ -316,6 +368,7 @@ app.post('/next', (req, res) => {
   game.difficulty += 1;
   game.combinations = [];
   game.roundResults = {};
+  game.background = null;
   game.state = 'lobby';
   res.redirect('/lobby');
 });
