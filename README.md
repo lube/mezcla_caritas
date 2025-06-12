@@ -33,6 +33,8 @@ base64, por lo que no es necesario especificar `response_format`.
 
 En la página principal puedes crear una nueva partida. Los participantes se unen subiendo su foto. El organizador inicia la ronda y se generarán imágenes combinadas. Después de adivinar se muestran los puntajes.
 
+En el lobby puedes editar el *prompt* que define cómo se combinarán las fotos. Esto permite personalizar la descripción que se envía al modelo de generación de imágenes.
+
 
 Cada dispositivo usa una sesión y puede registrar varios jugadores. Los puntajes se agrupan por sesión en la tabla final.
 
