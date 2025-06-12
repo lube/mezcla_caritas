@@ -6,9 +6,9 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="/style.css" />
 </head>
-<body class="bg-gray-100 text-gray-800">
+<body class="bg-gray-100 text-gray-800 min-h-screen flex flex-col">
   <%- include('partials/header') %>
-  <main class="max-w-2xl mx-auto p-6 bg-white mt-6 rounded shadow">
+  <main class="max-w-2xl mx-auto p-6 bg-white mt-6 rounded shadow flex-grow">
     <h2 class="text-xl font-semibold mb-4">Tabla de posiciones - Ronda <%= game.round %></h2>
     <table class="w-full table-auto mb-4 border-collapse">
       <thead class="bg-gray-200">
