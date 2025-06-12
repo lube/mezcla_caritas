@@ -15,13 +15,13 @@
   <main class="max-w-2xl mx-auto p-6 bg-white mt-6 rounded shadow">
     <h2 class="text-xl font-semibold mb-4">Selecciona las caras que aparecen</h2>
     <form action="/guess" method="post" class="space-y-6">
-      <% game.combinations.forEach((c, idx) => { %>
+      <% combos.forEach(c => { %>
         <div class="combo space-y-2">
           <img src="/<%= c.imagePath.split('/').slice(-2).join('/') %>" alt="combo" class="w-48 rounded">
           <div class="options space-x-4">
             <% game.participants.forEach(p => { %>
               <label class="inline-flex items-center">
-                <input type="checkbox" name="combo_<%= idx %>" value="<%= p.id %>" class="mr-1">
+                <input type="checkbox" name="combo_<%= c.index %>" value="<%= p.id %>" class="mr-1">
                 <span><%= p.name %></span>
               </label>
             <% }) %>
