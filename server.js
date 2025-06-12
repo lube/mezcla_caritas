@@ -16,6 +16,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Serve uploaded images and generated combinations
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/combinations', express.static(path.join(__dirname, 'combinations')));
+app.use('/backgrounds', express.static(path.join(__dirname, 'backgrounds')));
 app.use(fileUpload());
 app.use(express.urlencoded({ extended: true }));
 app.use(
