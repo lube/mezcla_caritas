@@ -15,16 +15,32 @@
   <main class="max-w-2xl mx-auto p-6 bg-white mt-6 rounded shadow">
     <h2 class="text-xl font-semibold mb-4">Tabla de posiciones - Ronda <%= game.round %></h2>
     <table class="w-full table-auto mb-4 border-collapse">
-       <thead class="bg-gray-200">
-         <tr>
-           <th class="px-2 py-1 text-left">Jugador (sesión)</th>
-           <th class="px-2 py-1 text-left">Puntos</th>
-         </tr>
-       </thead>
+      <thead class="bg-gray-200">
+        <tr>
+          <th class="px-2 py-1 text-left">Jugador (sesión)</th>
+          <th class="px-2 py-1 text-left">Puntos</th>
+          <% game.combinations.forEach((c, idx) => { %>
+            <th class="px-2 py-1 text-center">Foto <%= idx + 1 %></th>
+          <% }) %>
+        </tr>
+      </thead>
       <% players.forEach(p => { %>
         <tr class="border-t">
           <td class="py-1"><%= p.name %> (<%= p.sessionId %>)</td>
           <td class="py-1 font-semibold"><%= p.points %></td>
+          <% game.combinations.forEach((c, idx) => { %>
+            <% const res = roundResults[p.id] && roundResults[p.id][idx]; %>
+            <td class="py-1 text-center">
+              <% if (res && res.correct) { %>
+                ✓
+              <% } else if (res) { %>
+                <% const names = res.correctIds.map(id => game.participants.find(pr => pr.id === id).name).join(', '); %>
+                ✗ (<%= names %>)
+              <% } else { %>
+                -
+              <% } %>
+            </td>
+          <% }) %>
         </tr>
       <% }) %>
     </table>
