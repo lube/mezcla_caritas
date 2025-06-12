@@ -34,7 +34,7 @@ base64, por lo que no es necesario especificar `response_format`.
 En la página principal puedes crear una nueva partida. Los participantes se unen subiendo su foto. El organizador inicia la ronda y se generarán imágenes combinadas. Después de adivinar se muestran los puntajes.
 
 
-Cada dispositivo usa una sesión y puede registrar varios jugadores. Los puntajes se agrupan por sesión en la tabla final.
+Cada dispositivo usa una sesión y puede registrar varios jugadores. El tablero final muestra un listado por jugador junto a su sesión y los puntos reflejan cada cara acertada, incluso si fueron aciertos parciales.
 
 Este proyecto es solo un MVP y almacena todo en memoria.
 
