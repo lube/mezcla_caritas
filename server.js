@@ -1,4 +1,5 @@
 const express = require('express');
+const expressLayouts = require('express-ejs-layouts');
 const fileUpload = require('express-fileupload');
 const path = require('path');
 const fs = require('fs');
@@ -12,6 +13,8 @@ const PORT = process.env.PORT || 3000;
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+app.use(expressLayouts);
+app.set('layout', 'layout');
 app.use(express.static(path.join(__dirname, 'public')));
 // Serve uploaded images and generated combinations
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

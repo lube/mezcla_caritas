@@ -1,21 +1,8 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <title>Tabla de posiciones</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="/style.css" />
-</head>
-<body class="bg-gray-100 text-gray-800">
-  <header class="bg-yellow-400">
-    <div class="max-w-2xl mx-auto p-4">
-      <h1 class="text-2xl font-bold text-gray-800">Mezcla Caritas</h1>
-    </div>
-  </header>
-  <main class="max-w-2xl mx-auto p-6 bg-white mt-6 rounded shadow">
-    <h2 class="text-xl font-semibold mb-4">Tabla de posiciones - Ronda <%= game.round %></h2>
-    <table class="w-full table-auto mb-4 border-collapse">
-      <thead class="bg-gray-200">
+<% var title = 'Tabla de posiciones'; %>
+<h2 class="text-xl font-semibold mb-4">Tabla de posiciones - Ronda <%= game.round %></h2>
+<div class="overflow-x-auto">
+  <table class="min-w-full table-auto mb-4 border-collapse divide-y divide-gray-200">
+    <thead class="bg-gray-100">
         <tr>
           <th class="px-2 py-1 text-left">Jugador (sesión)</th>
           <th class="px-2 py-1 text-left">Puntos</th>
@@ -25,17 +12,17 @@
         </tr>
       </thead>
       <% players.forEach(p => { %>
-        <tr class="border-t">
-          <td class="py-1"><%= p.name %> (<%= p.sessionId %>)</td>
-          <td class="py-1 font-semibold"><%= p.points %></td>
+        <tr class="border-t divide-x divide-gray-200">
+          <td class="py-1 px-2"><%= p.name %> (<%= p.sessionId %>)</td>
+          <td class="py-1 px-2 font-semibold"><%= p.points %></td>
           <% game.combinations.forEach((c, idx) => { %>
             <% const res = roundResults[p.id] && roundResults[p.id][idx]; %>
-            <td class="py-1 text-center">
+            <td class="py-1 px-2 text-center">
               <% if (res && res.correct) { %>
-                ✓
+                <span class="text-green-600 font-bold">✓</span>
               <% } else if (res) { %>
                 <% const names = res.correctIds.map(id => game.participants.find(pr => pr.id === id).name).join(', '); %>
-                ✗ (<%= names %>)
+                <span class="text-red-600" title="<%= names %>">✗</span>
               <% } else { %>
                 -
               <% } %>
@@ -43,14 +30,12 @@
           <% }) %>
         </tr>
       <% }) %>
-    </table>
-    <form action="/next" method="post" class="mt-4">
-      <button type="submit" class="px-4 py-2 bg-yellow-500 text-white font-semibold rounded hover:bg-yellow-600">Siguiente ronda</button>
-    </form>
-    <form action="/reset" method="post" class="mt-2">
-      <button type="submit" class="px-4 py-2 bg-red-500 text-white font-semibold rounded hover:bg-red-600">Reiniciar juego</button>
-    </form>
-    <a href="/lobby" class="text-blue-600 underline mt-4 inline-block">Volver al lobby</a>
-  </main>
-</body>
-</html>
+  </table>
+</div>
+<form action="/next" method="post" class="mt-4">
+  <button type="submit" class="px-4 py-2 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700">Siguiente ronda</button>
+</form>
+<form action="/reset" method="post" class="mt-2">
+  <button type="submit" class="px-4 py-2 bg-red-500 text-white font-semibold rounded hover:bg-red-600">Reiniciar juego</button>
+</form>
+<a href="/lobby" class="text-blue-600 underline mt-4 inline-block">Volver al lobby</a>

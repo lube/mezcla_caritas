@@ -1,19 +1,5 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <title>Unirse</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="/style.css" />
-</head>
-<body class="bg-gray-100 text-gray-800">
-  <header class="bg-yellow-400">
-    <div class="max-w-2xl mx-auto p-4">
-      <h1 class="text-2xl font-bold text-gray-800">Mezcla Caritas</h1>
-    </div>
-  </header>
-  <main class="max-w-2xl mx-auto p-6 bg-white mt-6 rounded shadow">
-    <h2 class="text-xl font-semibold mb-4">Unirse a la partida</h2>
+<% var title = 'Unirse'; %>
+<h2 class="text-xl font-semibold mb-4">Unirse a la partida</h2>
     <form action="/join" method="post" enctype="multipart/form-data" class="space-y-4">
       <div>
         <label class="block mb-1">Nombre:</label>
@@ -24,7 +10,7 @@
         <input id="photoInput" type="file" name="photo" accept="image/*" required class="w-full" />
       </div>
       <img id="preview" class="w-32 h-32 object-cover rounded-full hidden" />
-      <button type="submit" class="px-4 py-2 bg-yellow-500 text-white font-semibold rounded hover:bg-yellow-600">Enviar</button>
+      <button type="submit" class="px-4 py-2 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700">Enviar</button>
     </form>
     <script>
       const input = document.getElementById('photoInput');
@@ -40,6 +26,3 @@
         reader.readAsDataURL(file);
       });
     </script>
-  </main>
-</body>
-</html>

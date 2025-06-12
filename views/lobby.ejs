@@ -1,38 +1,23 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <title>Lobby</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="/style.css" />
-</head>
-<body class="bg-gray-100 text-gray-800">
-  <header class="bg-yellow-400">
-    <div class="max-w-2xl mx-auto p-4">
-      <h1 class="text-2xl font-bold text-gray-800">Mezcla Caritas</h1>
+<% var title = 'Lobby'; %>
+<h2 class="text-xl font-semibold mb-4">Lobby - Ronda <%= game.round %> (Dificultad: <%= game.difficulty %>)</h2>
+<p class="mb-2">Participantes inscritos: <%= game.participants.length %></p>
+<div class="grid grid-cols-3 gap-4 mb-4">
+  <% game.participants.forEach(p => { %>
+    <div class="flex flex-col items-center text-center">
+      <img src="/<%= p.photoPath.split('/').slice(-3).join('/') %>" alt="<%= p.name %>" class="w-16 h-16 object-cover rounded-full mb-1">
+      <span class="text-sm"><%= p.name %></span>
     </div>
-  </header>
-  <main class="max-w-2xl mx-auto p-6 bg-white mt-6 rounded shadow">
-    <h2 class="text-xl font-semibold mb-4">Lobby - Ronda <%= game.round %> (Dificultad: <%= game.difficulty %>)</h2>
-    <p class="mb-2">Participantes inscritos: <%= game.participants.length %></p>
-    <div class="grid grid-cols-3 gap-4 mb-4">
-      <% game.participants.forEach(p => { %>
-        <div class="flex flex-col items-center text-center">
-          <img src="/<%= p.photoPath.split('/').slice(-3).join('/') %>" alt="<%= p.name %>" class="w-16 h-16 object-cover rounded-full mb-1">
-          <span class="text-sm"><%= p.name %></span>
-        </div>
-      <% }) %>
-    </div>
-    <a href="/join" class="text-blue-600 underline">Unirse</a>
-    <form action="/start" method="post" class="mt-6 space-y-4">
-      <div>
-        <label class="block mb-1">Prompt de combinación:</label>
-        <textarea name="prompt" rows="2" class="w-full border rounded p-2"><%= game.prompt %></textarea>
-      </div>
-      <button type="submit" class="px-4 py-2 bg-yellow-500 text-white font-semibold rounded hover:bg-yellow-600">Comenzar ronda</button>
-    </form>
-  </main>
-  <script>
+  <% }) %>
+</div>
+<a href="/join" class="text-blue-600 underline">Unirse</a>
+<form action="/start" method="post" class="mt-6 space-y-4">
+  <div>
+    <label class="block mb-1">Prompt de combinación:</label>
+    <textarea name="prompt" rows="2" class="w-full border rounded p-2"><%= game.prompt %></textarea>
+  </div>
+  <button type="submit" class="px-4 py-2 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700">Comenzar ronda</button>
+</form>
+<script>
     async function poll() {
       const res = await fetch('/status');
       const data = await res.json();
@@ -45,6 +30,4 @@
       }
     }
     poll();
-  </script>
-</body>
-</html>
+</script>
