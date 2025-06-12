@@ -38,6 +38,11 @@ let game = {
   totalToGenerate: 0
 };
 
+function isJoined(req) {
+  const ids = req.session.playerIds || [];
+  return ids.some(id => game.participants.some(p => p.id === id));
+}
+
 function resetGame() {
   game.round = 1;
   game.difficulty = 2;
@@ -77,7 +82,11 @@ app.post('/reset', (req, res) => {
 // Lobby page
 app.get('/lobby', (req, res) => {
   if (game.state === 'generating') return res.redirect('/wait');
-  if (game.state === 'playing') return res.redirect('/play');
+  if (game.state === 'playing') {
+    if (isJoined(req)) return res.redirect('/play');
+  } else if (game.state === 'scoreboard') {
+    if (isJoined(req)) return res.redirect('/scoreboard');
+  }
   res.render('lobby', { game });
 });
 
@@ -97,7 +106,8 @@ app.get('/status', (req, res) => {
   res.json({
     state: game.state,
     generated: game.combinations.length,
-    total: game.totalToGenerate
+    total: game.totalToGenerate,
+    joined: isJoined(req)
   });
 });
 
@@ -231,6 +241,7 @@ app.post('/start', async (req, res) => {
 app.get('/play', (req, res) => {
   if (game.state === 'generating') return res.redirect('/wait');
   if (game.state !== 'playing') return res.redirect('/lobby');
+  if (!isJoined(req)) return res.redirect('/lobby');
   const playerIds = req.session.playerIds || [];
   const combos = game.combinations
     .map((c, idx) => ({ ...c, index: idx }))
@@ -275,6 +286,9 @@ app.post('/guess', (req, res) => {
 // Scoreboard
 app.get('/scoreboard', (req, res) => {
   if (game.state !== 'scoreboard') {
+    return res.redirect('/lobby');
+  }
+  if (!isJoined(req)) {
     return res.redirect('/lobby');
   }
   const players = game.participants
