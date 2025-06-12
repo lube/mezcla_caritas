@@ -241,7 +241,7 @@ app.post('/guess', (req, res) => {
   for (const [key, value] of Object.entries(guesses)) {
     const index = parseInt(key.split('_')[1]);
     const guessedIds = Array.isArray(value)
-      ? value.map(v => parseInt(v))
+      ? value.map(v => parseInt(v)).slice(0, game.difficulty)
       : [parseInt(value)];
     const combo = game.combinations[index];
     const correctIds = combo.participantIds;
