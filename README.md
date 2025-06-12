@@ -35,6 +35,8 @@ En la página principal puedes crear una nueva partida. Los participantes se une
 
 En el lobby puedes editar el *prompt* que define cómo se combinarán las fotos. Esto permite personalizar la descripción que se envía al modelo de generación de imágenes.
 
+En cada ronda se crea una única imagen por jugador. La dificultad indica cuántos rostros se mezclarán en esa foto, por lo que cada participante sólo debe adivinar una imagen diferente en su dispositivo.
+
 
 Cada dispositivo usa una sesión y puede registrar varios jugadores. El tablero final muestra un listado por jugador junto a su sesión y los puntos reflejan cada cara acertada, incluso si fueron aciertos parciales.
 

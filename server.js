@@ -130,16 +130,15 @@ app.post('/start', async (req, res) => {
         [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
       }
 
-      // create groups so each participant appears exactly once
-      // extra players are distributed to earlier groups
-      const groupCount = Math.floor(shuffled.length / game.difficulty) || 1;
-      const groups = Array.from({ length: groupCount }, () => []);
-      shuffled.forEach((id, idx) => {
-        groups[idx % groupCount].push(id);
-      });
-
+      // create one combination per player
       const combos = await Promise.all(
-        groups.map(async (chosen, idx) => {
+        game.participants.map(async (player, idx) => {
+          // pick difficulty number of unique participant ids at random
+          const chosen = [];
+          while (chosen.length < game.difficulty) {
+            const rand = shuffled[Math.floor(Math.random() * shuffled.length)];
+            if (!chosen.includes(rand)) chosen.push(rand);
+          }
           const base64Images = await Promise.all(
             chosen.map(id =>
               fs.promises.readFile(
@@ -202,7 +201,7 @@ app.post('/start', async (req, res) => {
           const buffer = Buffer.from(image.data[0].b64_json, 'base64');
           const comboPath = path.join(__dirname, 'combinations', `combo_${idx}.png`);
           await fs.promises.writeFile(comboPath, buffer);
-          return { imagePath: comboPath, participantIds: chosen };
+          return { imagePath: comboPath, participantIds: chosen, playerId: player.id };
         })
       );
 
@@ -220,7 +219,11 @@ app.post('/start', async (req, res) => {
 app.get('/play', (req, res) => {
   if (game.state === 'generating') return res.redirect('/wait');
   if (game.state !== 'playing') return res.redirect('/lobby');
-  res.render('play', { game });
+  const playerIds = req.session.playerIds || [];
+  const combos = game.combinations
+    .map((c, idx) => ({ ...c, index: idx }))
+    .filter(c => playerIds.includes(c.playerId));
+  res.render('play', { game, combos });
 });
 
 // Handle guesses
