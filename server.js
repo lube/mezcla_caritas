@@ -167,12 +167,12 @@ app.post('/start', async (req, res) => {
         const img = await fs.promises.readFile(bgPlayer.photoPath, { encoding: 'base64' });
         const bgContent = [
           { type: 'image_url', image_url: { url: `data:image/png;base64,${img}` } },
-          { type: 'text', text: 'Create a funny framed portrait of this person.' }
+          { type: 'text', text: 'Create a funny full body image of this person in a weird situation and place.' }
         ];
         const bgChat = await openai.chat.completions.create({
           model: 'gpt-4o',
           messages: [
-            { role: 'system', content: [{ type: 'text', text: 'You use your computer vision on user images to make new AI images.' }] },
+            { role: 'system', content: [{ type: 'text', text: 'You use your computer vision on user images to make new AI images. Execute your mission.' }] },
             { role: 'user', content: bgContent }
           ],
           response_format: {
