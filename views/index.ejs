@@ -6,9 +6,9 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="/style.css" />
 </head>
-  <body class="bg-gray-100 text-gray-800">
+  <body class="bg-gray-100 text-gray-800 min-h-screen flex flex-col">
   <%- include('partials/header') %>
-  <main class="max-w-2xl mx-auto p-6 bg-white mt-6 rounded shadow">
+  <main class="max-w-2xl mx-auto p-6 bg-white mt-6 rounded shadow flex-grow">
     <form action="/create" method="post" class="mb-4">
       <button type="submit" class="px-4 py-2 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700">Crear nueva partida</button>
     </form>
