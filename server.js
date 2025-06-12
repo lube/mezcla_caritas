@@ -101,6 +101,16 @@ app.get('/status', (req, res) => {
   });
 });
 
+// List participants for live lobby updates
+app.get('/participants', (req, res) => {
+  const data = game.participants.map(p => ({
+    id: p.id,
+    name: p.name,
+    photoUrl: '/' + p.photoPath.split(path.sep).slice(-3).join('/')
+  }));
+  res.json({ players: data });
+});
+
 // Handle join
 app.post('/join', async (req, res) => {
   const name = req.body.name;

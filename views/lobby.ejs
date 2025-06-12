@@ -10,8 +10,8 @@
   <%- include('partials/header') %>
   <main class="max-w-2xl mx-auto p-6 bg-white mt-6 rounded shadow flex-grow">
     <h2 class="text-xl font-semibold mb-4">Lobby - Ronda <%= game.round %> (Dificultad: <%= game.difficulty %>)</h2>
-    <p class="mb-2">Participantes inscritos: <%= game.participants.length %></p>
-    <div class="grid grid-cols-3 gap-4 mb-4">
+    <p class="mb-2">Participantes inscritos: <span id="p-count"><%= game.participants.length %></span></p>
+    <div id="p-grid" class="grid grid-cols-3 gap-4 mb-4">
       <% game.participants.forEach(p => { %>
         <div class="flex flex-col items-center text-center">
           <img src="/<%= p.photoPath.split('/').slice(-3).join('/') %>" alt="<%= p.name %>" class="w-16 h-16 object-cover rounded-full mb-1">
@@ -30,6 +30,29 @@
   </main>
   <%- include('partials/footer') %>
   <script>
+    async function updateParticipants() {
+      const res = await fetch('/participants');
+      const data = await res.json();
+      const countEl = document.getElementById('p-count');
+      const grid = document.getElementById('p-grid');
+      countEl.textContent = data.players.length;
+      grid.innerHTML = '';
+      data.players.forEach(p => {
+        const container = document.createElement('div');
+        container.className = 'flex flex-col items-center text-center';
+        const img = document.createElement('img');
+        img.src = p.photoUrl;
+        img.alt = p.name;
+        img.className = 'w-16 h-16 object-cover rounded-full mb-1';
+        const span = document.createElement('span');
+        span.className = 'text-sm';
+        span.textContent = p.name;
+        container.appendChild(img);
+        container.appendChild(span);
+        grid.appendChild(container);
+      });
+    }
+
     async function poll() {
       const res = await fetch('/status');
       const data = await res.json();
@@ -38,6 +61,7 @@
       } else if (data.state === 'playing') {
         window.location.href = '/play';
       } else {
+        await updateParticipants();
         setTimeout(poll, 2000);
       }
     }
