@@ -30,6 +30,7 @@ app.use(
 let game = {
   round: 1,
   difficulty: 2,
+  prompt: 'Analyze these participant photos and create one new face that blends all of them together.',
   participants: [], // {id, name, photoPath, points, sessionId}
   combinations: [], // {imagePath, participantIds}
   state: 'lobby' // lobby | generating | playing | scoreboard
@@ -38,6 +39,7 @@ let game = {
 function resetGame() {
   game.round = 1;
   game.difficulty = 2;
+  game.prompt = 'Analyze these participant photos and create one new face that blends all of them together.';
   game.participants = [];
   game.combinations = [];
   game.state = 'lobby';
@@ -108,6 +110,9 @@ app.post('/start', async (req, res) => {
   if (game.participants.length < game.difficulty) {
     return res.status(400).send('Not enough participants');
   }
+  game.prompt = req.body.prompt && req.body.prompt.trim() !== ''
+    ? req.body.prompt.trim()
+    : game.prompt;
   game.combinations = [];
   fs.rmSync(path.join(__dirname, 'combinations'), { recursive: true, force: true });
   fs.mkdirSync(path.join(__dirname, 'combinations'), { recursive: true });
@@ -150,7 +155,7 @@ app.post('/start', async (req, res) => {
           }));
           userContent.push({
             type: 'text',
-            text: 'Analyze these participant photos and create one new face that blends all of them together.'
+            text: game.prompt
           });
 
           const chat = await openai.chat.completions.create({
@@ -220,18 +225,19 @@ app.get('/play', (req, res) => {
 
 // Handle guesses
 app.post('/guess', (req, res) => {
-  const guesses = req.body; // {combo_0: [id,id], combo_1: [...]}
+  const guesses = req.body; // {combo_0: [id,id], combo_1: [...]}        
   for (const [key, value] of Object.entries(guesses)) {
     const index = parseInt(key.split('_')[1]);
-    const guessedIds = Array.isArray(value) ? value.map(v => parseInt(v)) : [parseInt(value)];
+    const guessedIds = Array.isArray(value)
+      ? value.map(v => parseInt(v))
+      : [parseInt(value)];
     const combo = game.combinations[index];
-    const correct = combo.participantIds.every(id => guessedIds.includes(id)) && guessedIds.length === combo.participantIds.length;
-    if (correct) {
-      guessedIds.forEach(id => {
+    combo.participantIds.forEach(id => {
+      if (guessedIds.includes(id)) {
         const player = game.participants.find(p => p.id === id);
         if (player) player.points += 1;
-      });
-    }
+      }
+    });
   }
   game.state = 'scoreboard';
   res.redirect('/scoreboard');
@@ -240,16 +246,10 @@ app.post('/guess', (req, res) => {
 // Scoreboard
 app.get('/scoreboard', (req, res) => {
   game.state = 'scoreboard';
-  const sessionScores = {};
-  game.participants.forEach(p => {
-    if (!sessionScores[p.sessionId]) {
-      sessionScores[p.sessionId] = { sessionId: p.sessionId, players: [], points: 0 };
-    }
-    sessionScores[p.sessionId].players.push({ name: p.name, points: p.points });
-    sessionScores[p.sessionId].points += p.points;
-  });
-  const sessions = Object.values(sessionScores);
-  res.render('scoreboard', { game, sessions });
+  const players = game.participants
+    .map(p => ({ name: p.name, sessionId: p.sessionId, points: p.points }))
+    .sort((a, b) => b.points - a.points);
+  res.render('scoreboard', { game, players });
 });
 
 // Next round
