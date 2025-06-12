@@ -66,6 +66,12 @@ app.post('/create', (req, res) => {
   res.redirect('/lobby');
 });
 
+// Reset and go to home
+app.post('/reset', (req, res) => {
+  resetGame();
+  res.redirect('/');
+});
+
 // Lobby page
 app.get('/lobby', (req, res) => {
   if (game.state === 'generating') return res.redirect('/wait');
@@ -265,7 +271,9 @@ app.post('/guess', (req, res) => {
 
 // Scoreboard
 app.get('/scoreboard', (req, res) => {
-  game.state = 'scoreboard';
+  if (game.state !== 'scoreboard') {
+    return res.redirect('/lobby');
+  }
   const players = game.participants
     .map(p => ({ id: p.id, name: p.name, sessionId: p.sessionId, points: p.points }))
     .sort((a, b) => b.points - a.points);
