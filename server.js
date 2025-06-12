@@ -30,6 +30,7 @@ app.use(
 let game = {
   round: 1,
   difficulty: 2,
+  prompt: 'Analyze these participant photos and create one new face that blends all of them together.',
   participants: [], // {id, name, photoPath, points, sessionId}
   combinations: [], // {imagePath, participantIds}
   state: 'lobby' // lobby | generating | playing | scoreboard
@@ -38,6 +39,7 @@ let game = {
 function resetGame() {
   game.round = 1;
   game.difficulty = 2;
+  game.prompt = 'Analyze these participant photos and create one new face that blends all of them together.';
   game.participants = [];
   game.combinations = [];
   game.state = 'lobby';
@@ -108,6 +110,9 @@ app.post('/start', async (req, res) => {
   if (game.participants.length < game.difficulty) {
     return res.status(400).send('Not enough participants');
   }
+  game.prompt = req.body.prompt && req.body.prompt.trim() !== ''
+    ? req.body.prompt.trim()
+    : game.prompt;
   game.combinations = [];
   fs.rmSync(path.join(__dirname, 'combinations'), { recursive: true, force: true });
   fs.mkdirSync(path.join(__dirname, 'combinations'), { recursive: true });
@@ -142,7 +147,7 @@ app.post('/start', async (req, res) => {
         }));
         userContent.push({
           type: 'text',
-          text: 'Analyze these participant photos and create one new face that blends all of them together.'
+          text: game.prompt
         });
 
         const chat = await openai.chat.completions.create({

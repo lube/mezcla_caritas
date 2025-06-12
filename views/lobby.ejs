@@ -24,7 +24,11 @@
       <% }) %>
     </div>
     <a href="/join" class="text-blue-600 underline">Unirse</a>
-    <form action="/start" method="post" class="mt-6">
+    <form action="/start" method="post" class="mt-6 space-y-4">
+      <div>
+        <label class="block mb-1">Prompt de combinación:</label>
+        <textarea name="prompt" rows="2" class="w-full border rounded p-2"><%= game.prompt %></textarea>
+      </div>
       <button type="submit" class="px-4 py-2 bg-yellow-500 text-white font-semibold rounded hover:bg-yellow-600">Comenzar ronda</button>
     </form>
   </main>
