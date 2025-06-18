@@ -246,14 +246,14 @@ app.post('/start', async (req, res) => {
         [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
       }
 
-      // create up to five combinations sequentially
-      for (let idx = 0; idx < generateCount; idx++) {
-          // pick difficulty number of unique participant ids at random
-          const chosen = [];
-          while (chosen.length < game.difficulty) {
-            const rand = shuffled[Math.floor(Math.random() * shuffled.length)];
-            if (!chosen.includes(rand)) chosen.push(rand);
-          }
+      const groupCount = Math.min(Math.floor(shuffled.length / game.difficulty) || 1, generateCount);
+      const groups = Array.from({ length: groupCount }, () => []);
+      shuffled.forEach((id, idx) => {
+        groups[idx % groupCount].push(id);
+      });
+
+      async function generateCombo(chosen, idx, attempt = 1) {
+        try {
           const base64Images = await Promise.all(
             chosen.map(id =>
               fs.promises.readFile(
@@ -316,9 +316,24 @@ app.post('/start', async (req, res) => {
           const buffer = Buffer.from(image.data[0].b64_json, 'base64');
           const comboPath = path.join(__dirname, 'combinations', `combo_${idx}.png`);
           await fs.promises.writeFile(comboPath, buffer);
-          game.combinations.push({ imagePath: comboPath, participantIds: chosen });
+          return { imagePath: comboPath, participantIds: chosen };
+        } catch (err) {
+          const status = err && (err.status || (err.response && err.response.status));
+          const msg = err && err.message ? err.message.toLowerCase() : '';
+          if (attempt < 2 && (status === 429 || status >= 500 || msg.includes('timeout'))) {
+            console.warn('Retrying combo', idx, 'after error', err.message || err);
+            await new Promise(r => setTimeout(r, 2000));
+            return generateCombo(chosen, idx, attempt + 1);
+          }
+          throw err;
         }
-      
+      }
+
+      const combos = await Promise.all(
+        groups.map((group, idx) => generateCombo(group, idx))
+      );
+
+      game.combinations = combos;
       game.state = 'playing';
     } catch (err) {
       console.error('Error generating images', err);
