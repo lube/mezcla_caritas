@@ -7,6 +7,18 @@ require('dotenv').config();
 const { OpenAI } = require('openai');
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+async function withRetry(fn, retries = 1) {
+  try {
+    return await fn();
+  } catch (err) {
+    if (retries > 0 && (err.status === 429 || err.status >= 500)) {
+      await new Promise(res => setTimeout(res, 1000));
+      return withRetry(fn, retries - 1);
+    }
+    throw err;
+  }
+}
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -246,78 +258,79 @@ app.post('/start', async (req, res) => {
         [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
       }
 
-      // create up to five combinations sequentially
-      for (let idx = 0; idx < generateCount; idx++) {
-          // pick difficulty number of unique participant ids at random
-          const chosen = [];
-          while (chosen.length < game.difficulty) {
-            const rand = shuffled[Math.floor(Math.random() * shuffled.length)];
-            if (!chosen.includes(rand)) chosen.push(rand);
-          }
-          const base64Images = await Promise.all(
-            chosen.map(id =>
-              fs.promises.readFile(
-                game.participants.find(p => p.id === id).photoPath,
-                { encoding: 'base64' }
-              )
-            )
-          );
-
-          const userContent = base64Images.map(img => ({
-            type: 'image_url',
-            image_url: { url: `data:image/png;base64,${img}` }
-          }));
-          userContent.push({
-            type: 'text',
-            text: game.prompt
-          });
-
-          const chat = await openai.chat.completions.create({
-            model: 'gpt-4o',
-            messages: [
-              {
-                role: 'system',
-                content: [
-                  { type: 'text', text: 'You use your computer vision on user images to make new AI images.' }
-                ]
-              },
-              { role: 'user', content: userContent }
-            ],
-            response_format: {
-              type: 'json_schema',
-              json_schema: {
-                name: 'dalle_output',
-                strict: true,
-                schema: {
-                  type: 'object',
-                  properties: {
-                    prompt: { type: 'string' },
-                    size: { type: 'string', enum: ['1024x1024', '1024x1536', '1536x1024'] }
-                  },
-                  required: ['prompt', 'size'],
-                  additionalProperties: false
-                }
-              }
-            },
-            temperature: 0.5,
-            max_tokens: 1500,
-            top_p: 0.9
-          });
-
-          const dalleParams = JSON.parse(chat.choices[0].message.content);
-
-          const image = await openai.images.generate({
-            model: 'gpt-image-1',
-            prompt: dalleParams.prompt,
-            size: dalleParams.size,
-            moderation: 'low'
-          });
-
-          const buffer = Buffer.from(image.data[0].b64_json, 'base64');
-          const comboPath = path.join(__dirname, 'combinations', `combo_${idx}.png`);
-          await fs.promises.writeFile(comboPath, buffer);
-          game.combinations.push({ imagePath: comboPath, participantIds: chosen });
+      // create up to five combinations concurrently
+      const tasks = Array.from({ length: generateCount }, (_, idx) => (async () => {
+        const chosen = [];
+        while (chosen.length < game.difficulty) {
+          const rand = shuffled[Math.floor(Math.random() * shuffled.length)];
+          if (!chosen.includes(rand)) chosen.push(rand);
         }
+        const base64Images = await Promise.all(
+          chosen.map(id =>
+            fs.promises.readFile(
+              game.participants.find(p => p.id === id).photoPath,
+              { encoding: 'base64' }
+            )
+          )
+        );
+
+        const userContent = base64Images.map(img => ({
+          type: 'image_url',
+          image_url: { url: `data:image/png;base64,${img}` }
+        }));
+        userContent.push({
+          type: 'text',
+          text: game.prompt
+        });
+
+        const chat = await withRetry(() => openai.chat.completions.create({
+          model: 'gpt-4o',
+          messages: [
+            {
+              role: 'system',
+              content: [
+                { type: 'text', text: 'You use your computer vision on user images to make new AI images.' }
+              ]
+            },
+            { role: 'user', content: userContent }
+          ],
+          response_format: {
+            type: 'json_schema',
+            json_schema: {
+              name: 'dalle_output',
+              strict: true,
+              schema: {
+                type: 'object',
+                properties: {
+                  prompt: { type: 'string' },
+                  size: { type: 'string', enum: ['1024x1024', '1024x1536', '1536x1024'] }
+                },
+                required: ['prompt', 'size'],
+                additionalProperties: false
+              }
+            }
+          },
+          temperature: 0.5,
+          max_tokens: 1500,
+          top_p: 0.9
+        }));
+
+        const dalleParams = JSON.parse(chat.choices[0].message.content);
+
+        const image = await withRetry(() => openai.images.generate({
+          model: 'gpt-image-1',
+          prompt: dalleParams.prompt,
+          size: dalleParams.size,
+          moderation: 'low'
+        }));
+
+        const buffer = Buffer.from(image.data[0].b64_json, 'base64');
+        const comboPath = path.join(__dirname, 'combinations', `combo_${idx}.png`);
+        await fs.promises.writeFile(comboPath, buffer);
+        game.combinations.push({ imagePath: comboPath, participantIds: chosen });
+      })());
+
+      await Promise.all(tasks);
       
       game.state = 'playing';
     } catch (err) {
