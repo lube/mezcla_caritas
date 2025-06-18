@@ -17,9 +17,10 @@
           <img src="/<%= c.imagePath.split('/').slice(-2).join('/') %>" alt="combo" class="w-48 rounded">
           <div class="options space-x-4">
             <% game.participants.forEach(p => { %>
-              <label class="inline-flex items-center">
+              <label class="inline-flex items-center relative group">
                 <input type="checkbox" name="combo_<%= c.index %>" value="<%= p.id %>" class="mr-1">
                 <span><%= p.name %></span>
+                <img src="/<%= p.photoPath.split('/').slice(-3).join('/') %>" alt="<%= p.name %>" class="absolute top-full left-0 mt-1 w-24 rounded hidden group-hover:block shadow-lg z-10">
               </label>
             <% }) %>
           </div>
