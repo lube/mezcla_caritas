@@ -28,11 +28,12 @@
           <% game.combinations.forEach((c, idx) => { %>
             <% const res = roundResults[p.id] && roundResults[p.id][idx]; %>
             <td class="py-1 text-center">
-              <% if (res && res.correct) { %>
-                ✓
-              <% } else if (res) { %>
-                <% const names = res.correctIds.map(id => game.participants.find(pr => pr.id === id).name).join(', '); %>
-                ✗ (<%= names %>)
+              <% if (res) { %>
+                <%= res.correct ? '✓' : '✗' %>
+                <% res.guessedIds.forEach((gid, i) => { %>
+                  <% const name = game.participants.find(pr => pr.id === gid).name; %>
+                  <span class="<%= res.correctIds.includes(gid) ? 'text-green-600' : 'text-red-600' %>"><%= name %></span><%= i < res.guessedIds.length - 1 ? ', ' : '' %>
+                <% }) %>
               <% } else { %>
                 -
               <% } %>
