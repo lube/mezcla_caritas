@@ -7,6 +7,14 @@ require('dotenv').config();
 const { OpenAI } = require('openai');
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+function logEvent(...args) {
+  console.log(new Date().toISOString(), ...args);
+}
+
+function logError(...args) {
+  console.error(new Date().toISOString(), ...args);
+}
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -72,9 +80,11 @@ function resetGame() {
   fs.mkdirSync(path.join(__dirname, 'uploads'), { recursive: true });
   fs.mkdirSync(path.join(__dirname, 'combinations'), { recursive: true });
   fs.mkdirSync(path.join(__dirname, 'backgrounds'), { recursive: true });
+  logEvent('Game reset');
 }
 
 resetGame();
+logEvent('Game initialized');
 
 // Render landing page
 app.get('/', (req, res) => {
@@ -90,12 +100,14 @@ app.post('/create', (req, res) => {
   req.session.playerIds = [];
   game.state = 'lobby';
   game.owner = req.sessionID;
+  logEvent('New game created by', req.sessionID);
   res.redirect('/lobby');
 });
 
 // Reset and go to home
 app.post('/reset', (req, res) => {
   resetGame();
+  logEvent('Game reset by', req.sessionID);
   req.session.playerIds = [];
   res.redirect('/');
 });
@@ -155,6 +167,7 @@ app.post('/join', async (req, res) => {
   const uploadPath = path.join(sessionDir, `${id}_${req.files.photo.name}`);
   await req.files.photo.mv(uploadPath);
   game.participants.push({ id, name, photoPath: uploadPath, points: 0, sessionId });
+  logEvent('Player joined', name, 'id', id);
   req.session.playerIds = req.session.playerIds || [];
   req.session.playerIds.push(id);
   res.redirect('/lobby');
@@ -175,6 +188,7 @@ app.post('/start', async (req, res) => {
   const generateCount = Math.min(game.participants.length, 5);
   game.totalToGenerate = generateCount;
   game.state = 'generating';
+  logEvent('Round started with', game.participants.length, 'players');
   res.redirect('/wait');
 
   // async generation after redirect
@@ -233,7 +247,7 @@ app.post('/start', async (req, res) => {
         game.backgroundTitle = bgParams.prompt;
         game.backgroundOwner = bgPlayer.name;
       } catch (bgErr) {
-        console.error('Error generating background image', bgErr);
+        logError('Error generating background image', bgErr);
         game.background = null;
         game.backgroundTitle = null;
         game.backgroundOwner = null;
@@ -321,7 +335,7 @@ app.post('/start', async (req, res) => {
           const status = err && (err.status || (err.response && err.response.status));
           const msg = err && err.message ? err.message.toLowerCase() : '';
           if (attempt < 2 && (status === 429 || status >= 500 || msg.includes('timeout'))) {
-            console.warn('Retrying combo', idx, 'after error', err.message || err);
+            logEvent('Retrying combo', idx, 'after error', err.message || err);
             await new Promise(r => setTimeout(r, 2000));
             return generateCombo(chosen, idx, attempt + 1);
           }
@@ -335,8 +349,9 @@ app.post('/start', async (req, res) => {
 
       game.combinations = combos;
       game.state = 'playing';
+      logEvent('Images generated for round', game.round);
     } catch (err) {
-      console.error('Error generating images', err);
+      logError('Error generating images', err);
       game.state = 'lobby';
     }
   })();
@@ -391,6 +406,7 @@ app.post('/guess', (req, res) => {
   }
 
   game.state = 'scoreboard';
+  logEvent('Guesses submitted for round', game.round);
   res.redirect('/scoreboard');
 });
 
@@ -431,9 +447,10 @@ app.post('/next', (req, res) => {
   game.backgroundTitle = null;
   game.backgroundOwner = null;
   game.state = 'lobby';
+  logEvent('Starting round', game.round);
   res.redirect('/lobby');
 });
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  logEvent(`Server running on port ${PORT}`);
 });
