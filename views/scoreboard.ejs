@@ -9,46 +9,62 @@
 </head>
 <body class="bg-gray-100 text-gray-800 min-h-screen flex flex-col">
   <%- include('partials/header') %>
-  <main class="max-w-2xl ml-6 p-6 bg-white mt-6 rounded shadow flex-grow">
-    <h2 class="text-xl font-semibold mb-4">Tabla de posiciones - Ronda <%= game.round %></h2>
-    <table class="w-full table-auto mb-4 border-collapse">
-      <thead class="bg-gray-200">
-        <tr>
-          <th class="px-2 py-1 text-left">Jugador (sesión)</th>
-          <th class="px-2 py-1 text-left">Puntos</th>
-          <% game.combinations.forEach((c, idx) => { %>
-            <th class="px-2 py-1 text-center">Foto <%= idx + 1 %></th>
-          <% }) %>
-        </tr>
-      </thead>
-      <% players.forEach(p => { %>
-        <tr class="border-t">
-          <td class="py-1"><%= p.name %> (<%= p.sessionId %>)</td>
-          <td class="py-1 font-semibold"><%= p.points %></td>
-          <% game.combinations.forEach((c, idx) => { %>
-            <% const res = roundResults[p.id] && roundResults[p.id][idx]; %>
-            <td class="py-1 text-center">
-              <% if (res) { %>
-                <%= res.correct ? '✓' : '✗' %>
-                <% res.guessedIds.forEach((gid, i) => { %>
-                  <% const name = game.participants.find(pr => pr.id === gid).name; %>
-                  <span class="<%= res.correctIds.includes(gid) ? 'text-green-600' : 'text-red-600' %>"><%= name %></span><%= i < res.guessedIds.length - 1 ? ', ' : '' %>
-                <% }) %>
-              <% } else { %>
-                -
-              <% } %>
-            </td>
-          <% }) %>
-        </tr>
+  <main class="max-w-4xl ml-6 p-6 bg-white mt-6 rounded shadow flex-grow flex flex-col md:flex-row md:space-x-6">
+    <div class="md:w-2/3">
+      <h2 class="text-xl font-semibold mb-4">Tabla de posiciones - Ronda <%= game.round %></h2>
+      <table class="w-full table-auto mb-4 border-collapse">
+        <thead class="bg-gray-200">
+          <tr>
+            <th class="px-2 py-1 text-left">Jugador (sesión)</th>
+            <th class="px-2 py-1 text-left">Puntos</th>
+            <% game.combinations.forEach((c, idx) => { %>
+              <th class="px-2 py-1 text-center">Foto <%= idx + 1 %></th>
+            <% }) %>
+          </tr>
+        </thead>
+        <% players.forEach(p => { %>
+          <tr class="border-t">
+            <td class="py-1"><%= p.name %> (<%= p.sessionId %>)</td>
+            <td class="py-1 font-semibold"><%= p.points %></td>
+            <% game.combinations.forEach((c, idx) => { %>
+              <% const res = roundResults[p.id] && roundResults[p.id][idx]; %>
+              <td class="py-1 text-center">
+                <% if (res) { %>
+                  <%= res.correct ? '✓' : '✗' %>
+                  <% res.guessedIds.forEach((gid, i) => { %>
+                    <% const name = game.participants.find(pr => pr.id === gid).name; %>
+                    <span class="<%= res.correctIds.includes(gid) ? 'text-green-600' : 'text-red-600' %>"><%= name %></span><%= i < res.guessedIds.length - 1 ? ', ' : '' %>
+                  <% }) %>
+                <% } else { %>
+                  -
+                <% } %>
+              </td>
+            <% }) %>
+          </tr>
+        <% }) %>
+      </table>
+      <form action="/next" method="post" class="mt-4">
+        <button type="submit" class="px-4 py-2 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700">Siguiente ronda</button>
+      </form>
+      <form action="/reset" method="post" class="mt-2">
+        <button type="submit" class="px-4 py-2 bg-red-500 text-white font-semibold rounded hover:bg-red-600">Reiniciar juego</button>
+      </form>
+      <a href="/lobby" class="text-blue-600 underline mt-4 inline-block">Volver al lobby</a>
+    </div>
+    <aside class="md:w-1/3 mt-6 md:mt-0">
+      <h3 class="text-lg font-semibold mb-2">Imágenes generadas</h3>
+      <% game.combinations.forEach((c) => { %>
+        <div class="mb-4">
+          <img src="/<%= c.imagePath.split('/').slice(-2).join('/') %>" alt="combo" class="w-full rounded mb-1">
+          <div class="flex space-x-1">
+            <% c.participantIds.forEach(pid => { %>
+              <% const p = game.participants.find(pp => pp.id === pid); %>
+              <img src="/<%= p.photoPath.split('/').slice(-3).join('/') %>" alt="<%= p.name %>" class="w-10 h-10 rounded">
+            <% }) %>
+          </div>
+        </div>
       <% }) %>
-    </table>
-    <form action="/next" method="post" class="mt-4">
-      <button type="submit" class="px-4 py-2 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700">Siguiente ronda</button>
-    </form>
-    <form action="/reset" method="post" class="mt-2">
-      <button type="submit" class="px-4 py-2 bg-red-500 text-white font-semibold rounded hover:bg-red-600">Reiniciar juego</button>
-    </form>
-  <a href="/lobby" class="text-blue-600 underline mt-4 inline-block">Volver al lobby</a>
+    </aside>
   </main>
   <%- include('partials/footer') %>
   <script>
