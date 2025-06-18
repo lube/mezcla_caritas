@@ -39,12 +39,17 @@ let game = {
   totalToGenerate: 0,
   background: null,
   backgroundTitle: null,
-  backgroundOwner: null
+  backgroundOwner: null,
+  owner: null
 };
 
 function isJoined(req) {
   const ids = req.session.playerIds || [];
   return ids.some(id => game.participants.some(p => p.id === id));
+}
+
+function allGuessed() {
+  return game.participants.every(p => game.roundResults[p.id]);
 }
 
 function resetGame() {
@@ -59,6 +64,7 @@ function resetGame() {
   game.background = null;
   game.backgroundTitle = null;
   game.backgroundOwner = null;
+  game.owner = null;
   // Clean uploads and combinations directories
   fs.rmSync(path.join(__dirname, 'uploads'), { recursive: true, force: true });
   fs.rmSync(path.join(__dirname, 'combinations'), { recursive: true, force: true });
@@ -79,6 +85,7 @@ app.get('/', (req, res) => {
 app.post('/create', (req, res) => {
   resetGame();
   game.state = 'lobby';
+  game.owner = req.sessionID;
   res.redirect('/lobby');
 });
 
@@ -364,19 +371,29 @@ app.get('/scoreboard', (req, res) => {
   if (game.state !== 'scoreboard') {
     return res.redirect('/lobby');
   }
-  if (!isJoined(req)) {
+  if (!isJoined(req) && req.sessionID !== game.owner) {
     return res.redirect('/lobby');
   }
   const players = game.participants
     .map(p => ({ id: p.id, name: p.name, sessionId: p.sessionId, points: p.points }))
     .sort((a, b) => b.points - a.points);
-  res.render('scoreboard', { game, players, roundResults: game.roundResults });
+  const everyoneGuessed = allGuessed();
+  res.render('scoreboard', {
+    game,
+    players,
+    roundResults: game.roundResults,
+    everyoneGuessed,
+    sessionID: req.sessionID
+  });
 });
 
 // Next round
 app.post('/next', (req, res) => {
   if (game.state !== 'scoreboard') {
     return res.redirect('/lobby');
+  }
+  if (!allGuessed() && req.sessionID !== game.owner) {
+    return res.status(403).send('Players are still guessing');
   }
   game.round += 1;
   game.difficulty += 1;
