@@ -78,6 +78,7 @@ app.get('/', (req, res) => {
 // Create new game (organizer)
 app.post('/create', (req, res) => {
   resetGame();
+  req.session.playerIds = [];
   game.state = 'lobby';
   res.redirect('/lobby');
 });
@@ -85,6 +86,7 @@ app.post('/create', (req, res) => {
 // Reset and go to home
 app.post('/reset', (req, res) => {
   resetGame();
+  req.session.playerIds = [];
   res.redirect('/');
 });
 
@@ -330,15 +332,23 @@ app.post('/guess', (req, res) => {
   const guesses = req.body; // {combo_0: [id,id], combo_1: [...]} by the current session
   const sessionPlayerIds = req.session.playerIds || [];
 
+  if (game.state !== 'playing' || !isJoined(req)) {
+    return res.redirect('/lobby');
+  }
+  // Prevent scoring twice for the same round
+  const alreadyScored = sessionPlayerIds.some(pid => game.roundResults[pid]);
+  if (alreadyScored) {
+    return res.redirect('/scoreboard');
+  }
+
   sessionPlayerIds.forEach(pid => {
     game.roundResults[pid] = [];
   });
 
   for (const [key, value] of Object.entries(guesses)) {
     const index = parseInt(key.split('_')[1]);
-    const guessedIds = Array.isArray(value)
-      ? value.map(v => parseInt(v)).slice(0, game.difficulty)
-      : [parseInt(value)];
+    const raw = Array.isArray(value) ? value : [value];
+    const guessedIds = Array.from(new Set(raw.map(v => parseInt(v)).filter(id => !isNaN(id)))).slice(0, game.difficulty);
     const combo = game.combinations[index];
     const correctIds = combo.participantIds;
 
@@ -379,7 +389,7 @@ app.post('/next', (req, res) => {
     return res.redirect('/lobby');
   }
   game.round += 1;
-  game.difficulty += 1;
+  game.difficulty = Math.min(game.difficulty + 1, game.participants.length);
   game.combinations = [];
   game.roundResults = {};
   game.background = null;
