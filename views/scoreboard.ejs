@@ -43,9 +43,17 @@
           </tr>
         <% }) %>
       </table>
-      <form action="/next" method="post" class="mt-4">
-        <button type="submit" class="px-4 py-2 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700">Siguiente ronda</button>
-      </form>
+      <% const isOwner = sessionID === game.owner; %>
+      <% if (everyoneGuessed || isOwner) { %>
+        <form action="/next" method="post" class="mt-4">
+          <button type="submit" class="px-4 py-2 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700">Siguiente ronda</button>
+        </form>
+        <% if (!everyoneGuessed) { %>
+          <p class="text-sm text-red-600 mt-2">Aún hay jugadores adivinando</p>
+        <% } %>
+      <% } else { %>
+        <p class="text-sm text-red-600 mt-4">Aún hay jugadores adivinando</p>
+      <% } %>
       <form action="/reset" method="post" class="mt-2">
         <button type="submit" class="px-4 py-2 bg-red-500 text-white font-semibold rounded hover:bg-red-600">Reiniciar juego</button>
       </form>
