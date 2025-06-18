@@ -37,7 +37,9 @@ let game = {
   roundResults: {}, // {playerId: [{guessedIds, correctIds, correct}]}
   state: 'lobby', // lobby | generating | playing | scoreboard
   totalToGenerate: 0,
-  background: null
+  background: null,
+  backgroundTitle: null,
+  backgroundOwner: null
 };
 
 function isJoined(req) {
@@ -55,6 +57,8 @@ function resetGame() {
   game.state = 'lobby';
   game.totalToGenerate = 0;
   game.background = null;
+  game.backgroundTitle = null;
+  game.backgroundOwner = null;
   // Clean uploads and combinations directories
   fs.rmSync(path.join(__dirname, 'uploads'), { recursive: true, force: true });
   fs.rmSync(path.join(__dirname, 'combinations'), { recursive: true, force: true });
@@ -214,9 +218,13 @@ app.post('/start', async (req, res) => {
         const bgPath = path.join(__dirname, 'backgrounds', `bg_round_${game.round}.png`);
         await fs.promises.writeFile(bgPath, bgBuffer);
         game.background = bgPath;
+        game.backgroundTitle = bgParams.prompt;
+        game.backgroundOwner = bgPlayer.name;
       } catch (bgErr) {
         console.error('Error generating background image', bgErr);
         game.background = null;
+        game.backgroundTitle = null;
+        game.backgroundOwner = null;
       }
       const ids = game.participants.map(p => p.id);
       // shuffle participants for fair combinations
@@ -375,6 +383,8 @@ app.post('/next', (req, res) => {
   game.combinations = [];
   game.roundResults = {};
   game.background = null;
+  game.backgroundTitle = null;
+  game.backgroundOwner = null;
   game.state = 'lobby';
   res.redirect('/lobby');
 });
