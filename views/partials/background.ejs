@@ -16,9 +16,10 @@
   body::after {
     content: '<%= ((game.backgroundOwner ? game.backgroundOwner + " - " : "") + (game.backgroundTitle || "Nico siendo perseguido por una viejita en Manhattan")).replace(/'/g, "\\'") %>';
     position: fixed;
-    top: 0.5rem;
-    left: 0;
+    bottom: 0.5rem;
     right: 0;
+    left: auto;
+    width: 40vw;
     text-align: center;
     font-size: 1.25rem;
     font-weight: bold;
