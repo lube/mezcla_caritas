@@ -77,6 +77,9 @@ app.get('/', (req, res) => {
 
 // Create new game (organizer)
 app.post('/create', (req, res) => {
+  if (game.participants.length > 0 || game.state !== 'lobby') {
+    return res.redirect('/lobby');
+  }
   resetGame();
   req.session.playerIds = [];
   game.state = 'lobby';
