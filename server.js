@@ -260,12 +260,6 @@ app.post('/start', async (req, res) => {
         [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
       }
 
-      const groupCount = Math.min(Math.floor(shuffled.length / game.difficulty) || 1, generateCount);
-      const groups = Array.from({ length: groupCount }, () => []);
-      shuffled.forEach((id, idx) => {
-        groups[idx % groupCount].push(id);
-      });
-
       async function generateCombo(chosen, idx, attempt = 1) {
         try {
           const base64Images = await Promise.all(
@@ -342,10 +336,23 @@ app.post('/start', async (req, res) => {
           throw err;
         }
       }
+      const combos = Array(generateCount);
+      const tasks = [];
+      for (let idx = 0; idx < generateCount; idx++) {
+        const chosen = [];
+        while (chosen.length < game.difficulty) {
+          const rand = shuffled[Math.floor(Math.random() * shuffled.length)];
+          if (!chosen.includes(rand)) chosen.push(rand);
+        }
+        tasks.push(
+          generateCombo(chosen, idx).then(res => {
+            combos[idx] = res;
+            game.combinations = combos.filter(Boolean);
+          })
+        );
+      }
 
-      const combos = await Promise.all(
-        groups.map((group, idx) => generateCombo(group, idx))
-      );
+      await Promise.all(tasks);
 
       game.combinations = combos;
       game.state = 'playing';
