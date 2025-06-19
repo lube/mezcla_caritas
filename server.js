@@ -268,8 +268,12 @@ app.post('/start', async (req, res) => {
 
       async function generateCombo(chosen, idx, attempt = 1) {
         try {
+          const uniqueIds = Array.from(new Set(chosen));
+          if (uniqueIds.length < chosen.length) {
+            logEvent('Removed duplicate ids for combo', idx);
+          }
           const base64Images = await Promise.all(
-            chosen.map(id =>
+            uniqueIds.map(id =>
               fs.promises.readFile(
                 game.participants.find(p => p.id === id).photoPath,
                 { encoding: 'base64' }
@@ -330,7 +334,7 @@ app.post('/start', async (req, res) => {
           const buffer = Buffer.from(image.data[0].b64_json, 'base64');
           const comboPath = path.join(__dirname, 'combinations', `combo_${idx}.png`);
           await fs.promises.writeFile(comboPath, buffer);
-          return { imagePath: comboPath, participantIds: chosen };
+          return { imagePath: comboPath, participantIds: uniqueIds };
         } catch (err) {
           const status = err && (err.status || (err.response && err.response.status));
           const msg = err && err.message ? err.message.toLowerCase() : '';
