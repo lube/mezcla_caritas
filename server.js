@@ -125,6 +125,7 @@ app.get('/lobby', (req, res) => {
 
 // Join page
 app.get('/join', (req, res) => {
+  if (isJoined(req)) return res.redirect('/lobby');
   res.render('join', { game });
 });
 
@@ -156,6 +157,9 @@ app.get('/participants', (req, res) => {
 
 // Handle join
 app.post('/join', async (req, res) => {
+  if (isJoined(req)) {
+    return res.redirect('/lobby');
+  }
   const name = req.body.name;
   if (!req.files || !req.files.photo || !name) {
     return res.status(400).send('Name and photo required');
