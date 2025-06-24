@@ -106,6 +106,9 @@ app.post('/create', (req, res) => {
 
 // Reset and go to home
 app.post('/reset', (req, res) => {
+  if (req.sessionID !== game.owner) {
+    return res.status(403).send('Only the organizer can reset the game');
+  }
   resetGame();
   logEvent('Game reset by', req.sessionID);
   req.session.playerIds = [];
@@ -120,7 +123,7 @@ app.get('/lobby', (req, res) => {
   } else if (game.state === 'scoreboard') {
     if (isJoined(req)) return res.redirect('/scoreboard');
   }
-  res.render('lobby', { game });
+  res.render('lobby', { game, sessionID: req.sessionID });
 });
 
 // Join page
@@ -179,6 +182,12 @@ app.post('/join', async (req, res) => {
 
 // Start round
 app.post('/start', async (req, res) => {
+  if (game.state !== 'lobby') {
+    return res.status(403).send('Cannot start a round right now');
+  }
+  if (req.sessionID !== game.owner) {
+    return res.status(403).send('Only the organizer can start the round');
+  }
   if (game.participants.length < game.difficulty) {
     return res.status(400).send('Not enough participants');
   }
