@@ -171,9 +171,17 @@ app.post('/join', async (req, res) => {
   const sessionId = req.sessionID;
   const sessionDir = path.join(__dirname, 'uploads', sessionId);
   fs.mkdirSync(sessionDir, { recursive: true });
-  const uploadPath = path.join(sessionDir, `${id}_${req.files.photo.name}`);
+  const photoLabel = req.files.photo.name;
+  const uploadPath = path.join(sessionDir, `${id}_${photoLabel}`);
   await req.files.photo.mv(uploadPath);
-  game.participants.push({ id, name, photoPath: uploadPath, points: 0, sessionId });
+  game.participants.push({
+    id,
+    name,
+    photoPath: uploadPath,
+    photoLabel,
+    points: 0,
+    sessionId
+  });
   logEvent('Player joined', name, 'id', id);
   req.session.playerIds = req.session.playerIds || [];
   req.session.playerIds.push(id);
@@ -443,7 +451,13 @@ app.get('/scoreboard', (req, res) => {
     return res.redirect('/lobby');
   }
   const players = game.participants
-    .map(p => ({ id: p.id, name: p.name, sessionId: p.sessionId, points: p.points }))
+    .map(p => ({
+      id: p.id,
+      name: p.name,
+      sessionId: p.sessionId,
+      points: p.points,
+      photoLabel: p.photoLabel || path.basename(p.photoPath).split('_').slice(1).join('_')
+    }))
     .sort((a, b) => b.points - a.points);
   const everyoneGuessed = allGuessed();
   res.render('scoreboard', {
