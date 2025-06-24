@@ -425,14 +425,18 @@ app.post('/guess', (req, res) => {
     });
   }
 
-  game.state = 'scoreboard';
+  if (allGuessed()) {
+    game.state = 'scoreboard';
+  }
   logEvent('Guesses submitted for round', game.round);
   res.redirect('/scoreboard');
 });
 
 // Scoreboard
 app.get('/scoreboard', (req, res) => {
-  if (game.state !== 'scoreboard') {
+  const sessionPlayerIds = req.session.playerIds || [];
+  const guessed = sessionPlayerIds.some(pid => game.roundResults[pid]);
+  if (game.state !== 'scoreboard' && !guessed) {
     return res.redirect('/lobby');
   }
   if (!isJoined(req) && req.sessionID !== game.owner) {
@@ -447,7 +451,8 @@ app.get('/scoreboard', (req, res) => {
     players,
     roundResults: game.roundResults,
     everyoneGuessed,
-    sessionID: req.sessionID
+    sessionID: req.sessionID,
+    hasGuessed: guessed
   });
 });
 
